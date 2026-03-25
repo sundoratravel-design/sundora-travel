@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Sundora Travel — Çok Sayfalı Platform Oluşturucu
-Çalıştır: python3 generate_pages.py
-public/ klasöründeki index.html'yi okur, header/footer'ı günceller,
-ve tüm yeni sayfaları public/ altına yazar.
+Sundora Travel — Çok Sayfalı Platform Oluşturucu v2
+3 kritik düzeltme:
+  1. Tur kartları CSS fix (ec, eci, ecb, eco class'ları dahil edildi)
+  2. Lüks pastel mor-mavi gradient arka plan + beyaz metinler
+  3. Hamburger mobil menü
 """
 
 import re
@@ -111,7 +112,7 @@ def build_tour_cards(cards_data):
     cards_html = ""
     for num, bg, title, region, duration in cards_data:
         cards_html += f"""
-    <div class="ec fi">
+    <div class="ec">
       <div class="eci">
         <div class="ecb {bg}"></div>
         <div class="eco"></div>
@@ -130,62 +131,276 @@ def build_tour_cards(cards_data):
     </div>"""
     return cards_html
 
-def page_template(head_content, nav_html, footer_html, cursor_html, cursor_script, page_body, page_title="Sundora Travel"):
+PAGE_STYLES = """
+<style>
+/* ── SAYFA GENEL ── */
+body { background: linear-gradient(135deg, #1a1628 0%, #221830 25%, #1e2340 50%, #1a2535 75%, #1e1f30 100%) !important; min-height: 100vh; }
+
+/* ── MOBİL HAMBURGER MENÜ ── */
+.mob-menu-btn {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  z-index: 300;
+}
+.mob-menu-btn span {
+  display: block;
+  width: 24px;
+  height: 1px;
+  background: rgba(255,255,255,0.85);
+  transition: all .35s;
+}
+.nav.s .mob-menu-btn span { background: #505060; }
+.mob-menu-btn.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.mob-menu-btn.open span:nth-child(2) { opacity: 0; }
+.mob-menu-btn.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+.mob-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(22,18,38,0.97);
+  backdrop-filter: blur(20px);
+  z-index: 250;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+}
+.mob-nav-overlay.open { display: flex; }
+.mob-nav-overlay a {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(28px, 6vw, 42px);
+  font-weight: 300;
+  letter-spacing: .08em;
+  color: rgba(255,250,242,.9);
+  text-decoration: none;
+  transition: color .3s;
+}
+.mob-nav-overlay a:hover { color: #C4A068; }
+.mob-nav-overlay .mob-cta {
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  padding: .85rem 2.5rem;
+  border: 1px solid rgba(196,160,104,.5);
+  color: #DEC898;
+  margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+  .mob-menu-btn { display: flex; }
+  .nav-links { display: none !important; }
+  .nav-cta { display: none !important; }
+  .nav-lang { display: none !important; }
+}
+
+/* ── SAYFA BÖLÜM ── */
+.page-section { max-width: 1440px; margin: 0 auto; padding: 4rem 4rem 8rem; }
+
+/* ── SAYFA BAŞLIK ── */
+.page-title-block { padding: 11rem 0 3rem; border-bottom: 1px solid rgba(196,160,104,0.25); margin-bottom: 5rem; }
+.page-title-block .lbl { color: #DEC898; }
+.page-title-block .lbl::before { background: #DEC898; }
+.page-title-block .sh { color: rgba(255,250,242,.95); }
+.page-title-block .sh em { color: #DEC898; }
+
+/* ── FİLTRE ── */
+.filter-bar {
+  display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(196,160,104,0.22);
+  padding: 2rem 2.5rem; margin-bottom: 4rem;
+}
+.filter-group { display: flex; flex-direction: column; gap: .45rem; flex: 1; min-width: 160px; }
+.filter-group label { font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #DEC898; }
+.filter-group select,
+.filter-group input[type="date"] {
+  font-family: 'Jost', sans-serif; font-size: 12px; font-weight: 300;
+  color: rgba(255,250,242,.9); background: transparent;
+  border: none; border-bottom: 1px solid rgba(196,160,104,0.35);
+  padding: .55rem 0; outline: none; cursor: pointer;
+  -webkit-appearance: none; appearance: none; width: 100%;
+  transition: border-color .3s;
+}
+.filter-group select option { background: #221830; color: rgba(255,250,242,.9); }
+.filter-group select:focus,
+.filter-group input:focus { border-color: #C4A068; }
+.filter-group input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(.5); }
+.filter-btn {
+  font-family: 'Jost', sans-serif; font-size: 9px; font-weight: 400;
+  letter-spacing: .22em; text-transform: uppercase;
+  padding: .9rem 2.5rem; background: #C4A068; color: #fff;
+  border: none; cursor: pointer; transition: background .3s;
+  align-self: flex-end; white-space: nowrap;
+}
+.filter-btn:hover { background: #9A7040; }
+
+/* ── TUR KARTLARI (FIX) ── */
+.tour-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; margin-bottom: 4rem; }
+.ec { cursor: pointer; overflow: hidden; }
+.eci { aspect-ratio: 3/4; position: relative; overflow: hidden; }
+.ecb { position: absolute; inset: 0; transition: transform .9s cubic-bezier(.25,.46,.45,.94); }
+.ec:hover .ecb { transform: scale(1.08); }
+.eco { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,8,20,.88) 0%, rgba(10,8,20,.05) 55%, transparent 100%); }
+.ecarr {
+  position: absolute; top: 1.25rem; right: 1.25rem;
+  width: 34px; height: 34px;
+  border: 1px solid rgba(255,255,255,.18);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transform: translateY(-6px); transition: all .4s;
+}
+.ec:hover .ecarr { opacity: 1; transform: translateY(0); }
+.ecarr svg { width: 12px; height: 12px; stroke: rgba(255,255,255,.7); fill: none; stroke-width: 1.5; }
+.ecinfo { position: absolute; bottom: 0; left: 0; right: 0; padding: 1.75rem 1.5rem; }
+.ecn { font-size: 8px; font-weight: 300; letter-spacing: .25em; text-transform: uppercase; color: #DEC898; margin-bottom: .6rem; }
+.ect { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 21px; font-weight: 300; color: #fff; line-height: 1.2; margin-bottom: .35rem; transition: transform .4s; }
+.ec:hover .ect { transform: translateY(-3px); }
+.ecs { font-size: 10px; font-weight: 300; letter-spacing: .06em; color: rgba(255,255,255,.42); }
+.bg-h { background: linear-gradient(155deg,#7090A8 0%,#405870 45%,#203848 100%); }
+.bg-s { background: linear-gradient(155deg,#708858 0%,#506840 45%,#304820 100%); }
+.bg-c { background: linear-gradient(155deg,#A07858 0%,#785838 45%,#503818 100%); }
+.bg-p { background: linear-gradient(155deg,#806898 0%,#604878 45%,#402858 100%); }
+
+/* ── HAKKIMIZDA ── */
+.about-text { max-width: 780px; }
+.about-text p { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 17px; font-style: italic; line-height: 2.1; color: rgba(240,232,220,.75); margin-bottom: 2rem; }
+.about-text p:first-child { font-size: 22px; color: rgba(255,250,242,.95); font-style: normal; }
+
+/* ── İLETİŞİM / FORM ── */
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8rem; padding-top: 2rem; }
+.contact-info-col h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(28px,3vw,44px); font-weight: 300; color: rgba(255,250,242,.95); margin-bottom: 3rem; line-height: 1.2; }
+.contact-info-col h3 em { font-style: italic; color: #DEC898; }
+.ci-block { margin-bottom: 2.5rem; }
+.ci-label { font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #DEC898; margin-bottom: .5rem; display: flex; align-items: center; gap: .85rem; }
+.ci-label::before { content: ''; width: 22px; height: 1px; background: #DEC898; }
+.ci-value { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px; font-weight: 300; color: rgba(255,250,242,.85); line-height: 1.6; }
+.contact-form-col h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(22px,2.5vw,36px); font-weight: 300; color: rgba(255,250,242,.95); margin-bottom: 2.5rem; line-height: 1.2; }
+.form-group { margin-bottom: 1.75rem; }
+.form-group label { display: block; font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #DEC898; margin-bottom: .5rem; }
+.form-group input,
+.form-group textarea {
+  font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 300;
+  color: rgba(255,250,242,.9); background: transparent;
+  border: none; border-bottom: 1px solid rgba(196,160,104,.3);
+  padding: .6rem 0; width: 100%; outline: none;
+  transition: border-color .3s; resize: none;
+}
+.form-group input::placeholder,
+.form-group textarea::placeholder { color: rgba(255,250,242,.3); }
+.form-group input:focus,
+.form-group textarea:focus { border-color: #C4A068; }
+.form-group textarea { min-height: 120px; background: rgba(255,255,255,.04); padding: .8rem; border: 1px solid rgba(196,160,104,.2); }
+.submit-btn {
+  font-family: 'Jost', sans-serif; font-size: 9px; font-weight: 400;
+  letter-spacing: .22em; text-transform: uppercase;
+  padding: 1rem 3rem; background: transparent;
+  color: rgba(255,250,242,.9); border: 1px solid rgba(196,160,104,.5);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 1rem;
+  position: relative; overflow: hidden; transition: color .4s; margin-top: .5rem;
+}
+.submit-btn::before { content: ''; position: absolute; inset: 0; background: #C4A068; transform: translateX(-100%); transition: transform .45s cubic-bezier(.25,.46,.45,.94); }
+.submit-btn span { position: relative; z-index: 1; }
+.submit-btn:hover { color: #fff; border-color: #C4A068; }
+.submit-btn:hover::before { transform: translateX(0); }
+
+/* ── CTA / BTN ── */
+.cta-center { text-align: center; padding: 2rem 0 4rem; }
+.btn-e {
+  font-size: 9px; font-weight: 400; letter-spacing: .22em; text-transform: uppercase;
+  padding: .9rem 2.25rem; border: 1px solid rgba(196,160,104,.5);
+  color: rgba(255,250,242,.9); background: transparent; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 1rem;
+  position: relative; overflow: hidden; transition: color .4s; text-decoration: none;
+}
+.btn-e::before { content: ''; position: absolute; inset: 0; background: #C4A068; transform: translateX(-100%); transition: transform .45s cubic-bezier(.25,.46,.45,.94); }
+.btn-e span, .btn-e svg { position: relative; z-index: 1; }
+.btn-e:hover { color: #fff; border-color: #C4A068; }
+.btn-e:hover::before { transform: translateX(0); }
+
+/* ── FOOTER ÜZERİNDE AÇIKLIK ── */
+footer { background: rgba(0,0,0,.35) !important; }
+
+/* ── MOBİL RESPONSIVE ── */
+@media (max-width: 768px) {
+  .tour-grid { grid-template-columns: 1fr 1fr; }
+  .contact-grid { grid-template-columns: 1fr; gap: 3rem; }
+  .filter-bar { flex-direction: column; }
+  .page-section { padding: 2rem 1.5rem 5rem; }
+  .page-title-block { padding: 8rem 0 2rem; }
+}
+@media (max-width: 480px) {
+  .tour-grid { grid-template-columns: 1fr; }
+}
+</style>
+"""
+
+MOB_MENU_HTML = """
+<div class="mob-nav-overlay" id="mobNav">
+  <a href="/butik-grup-turlari.html">Butik Grup Turları</a>
+  <a href="/rotalar.html">Rotalar</a>
+  <a href="/hakkimizda.html">Hakkımızda</a>
+  <a href="/iletisim.html">İletişim</a>
+  <a href="/seyahatini-planla.html" class="mob-cta">Seyahatini Planla</a>
+</div>
+"""
+
+MOB_MENU_SCRIPT = """
+<script>
+(function(){
+  const btn = document.getElementById('mobMenuBtn');
+  const overlay = document.getElementById('mobNav');
+  if(!btn || !overlay) return;
+  btn.addEventListener('click', function(){
+    btn.classList.toggle('open');
+    overlay.classList.toggle('open');
+  });
+  overlay.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){
+      btn.classList.remove('open');
+      overlay.classList.remove('open');
+    });
+  });
+})();
+</script>
+"""
+
+def inject_mob_btn(nav_html):
+    """nav-r div'inin içine hamburger butonu ekle."""
+    return nav_html.replace(
+        '<div class="nav-r">',
+        '<div class="nav-r"><button class="mob-menu-btn" id="mobMenuBtn" aria-label="Menü"><span></span><span></span><span></span></button>'
+    )
+
+def page_template(head_content, nav_html, footer_html, cursor_html,
+                  cursor_script, page_body, page_title="Sundora Travel"):
+    nav_with_btn = inject_mob_btn(nav_html)
     return f"""<!DOCTYPE html>
 <html lang="tr">
 <head>
 {head_content}
 <title>{page_title} — travel &amp; beyond</title>
-<style>
-.page-section{{max-width:1440px;margin:0 auto;padding:4rem 4rem 8rem}}
-.filter-bar{{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;background:rgba(255,255,255,0.55);backdrop-filter:blur(16px);border:1px solid rgba(196,160,104,0.18);padding:2rem 2.5rem;margin-bottom:4rem}}
-.filter-group{{display:flex;flex-direction:column;gap:.45rem;flex:1;min-width:160px}}
-.filter-group label{{font-size:8px;font-weight:400;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}}
-.filter-group select,.filter-group input[type="date"]{{font-family:var(--ff-sans);font-size:12px;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:1px solid var(--c3);padding:.55rem 0;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none;width:100%;transition:border-color .3s}}
-.filter-group select:focus,.filter-group input:focus{{border-color:var(--gold)}}
-.filter-btn{{font-family:var(--ff-sans);font-size:9px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;padding:.9rem 2.5rem;background:var(--gold);color:var(--white);border:none;cursor:pointer;transition:background .3s;align-self:flex-end;white-space:nowrap}}
-.filter-btn:hover{{background:var(--gold-dk)}}
-.tour-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:4rem}}
-.about-text{{max-width:780px}}
-.about-text p{{font-family:var(--ff-serif);font-size:17px;font-style:italic;line-height:2.1;color:var(--smoke);margin-bottom:2rem}}
-.about-text p:first-child{{font-size:22px;color:var(--ink)}}
-.contact-grid{{display:grid;grid-template-columns:1fr 1fr;gap:8rem;padding-top:2rem}}
-.contact-info-col h3{{font-family:var(--ff-serif);font-size:clamp(28px,3vw,44px);font-weight:300;color:var(--ink);margin-bottom:3rem;line-height:1.2}}
-.contact-info-col h3 em{{font-style:italic;color:var(--gold-dk)}}
-.ci-block{{margin-bottom:2.5rem}}
-.ci-label{{font-size:8px;font-weight:400;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem;display:flex;align-items:center;gap:.85rem}}
-.ci-label::before{{content:'';width:22px;height:1px;background:var(--gold)}}
-.ci-value{{font-family:var(--ff-serif);font-size:16px;font-weight:300;color:var(--ink);line-height:1.6}}
-.contact-form-col h3{{font-family:var(--ff-serif);font-size:clamp(22px,2.5vw,36px);font-weight:300;color:var(--ink);margin-bottom:2.5rem;line-height:1.2}}
-.form-group{{margin-bottom:1.75rem}}
-.form-group label{{display:block;font-size:8px;font-weight:400;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem}}
-.form-group input,.form-group textarea{{font-family:var(--ff-sans);font-size:14px;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:1px solid var(--c3);padding:.6rem 0;width:100%;outline:none;transition:border-color .3s;resize:none}}
-.form-group input:focus,.form-group textarea:focus{{border-color:var(--gold)}}
-.form-group textarea{{min-height:120px;background:rgba(255,255,255,0.35);padding:.8rem;border:1px solid var(--c3)}}
-.submit-btn{{font-family:var(--ff-sans);font-size:9px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;padding:1rem 3rem;background:transparent;color:var(--ink);border:1px solid var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:1rem;position:relative;overflow:hidden;transition:color .4s;margin-top:.5rem}}
-.submit-btn::before{{content:'';position:absolute;inset:0;background:var(--ink);transform:translateX(-100%);transition:transform .45s cubic-bezier(.25,.46,.45,.94)}}
-.submit-btn span{{position:relative;z-index:1}}
-.submit-btn:hover{{color:var(--white)}}
-.submit-btn:hover::before{{transform:translateX(0)}}
-.cta-center{{text-align:center;padding:2rem 0 4rem}}
-.btn-e{{font-size:9px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;padding:.9rem 2.25rem;border:1px solid var(--ink);color:var(--ink);background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:1rem;position:relative;overflow:hidden;transition:color .4s;text-decoration:none}}
-.btn-e::before{{content:'';position:absolute;inset:0;background:var(--ink);transform:translateX(-100%);transition:transform .45s cubic-bezier(.25,.46,.45,.94)}}
-.btn-e span,.btn-e svg{{position:relative;z-index:1}}
-.btn-e:hover{{color:var(--white)}}
-.btn-e:hover::before{{transform:translateX(0)}}
-.page-title-block{{padding:11rem 0 3rem;border-bottom:1px solid var(--c3);margin-bottom:5rem}}
-</style>
+{PAGE_STYLES}
 </head>
 <body>
 {cursor_html}
-{nav_html}
+{MOB_MENU_HTML}
+{nav_with_btn}
 {page_body}
 {footer_html}
 {cursor_script}
 <script>
 const nav=document.getElementById('nav');
-window.addEventListener('scroll',()=>nav.classList.toggle('s',scrollY>80));
+if(nav) window.addEventListener('scroll',function(){{nav.classList.toggle('s',scrollY>80)}});
 </script>
+{MOB_MENU_SCRIPT}
 </body>
 </html>"""
 
@@ -268,7 +483,7 @@ def make_seyahatini_planla(head, nav, footer, cursor_html, cursor_script):
         <div class="form-group"><label>İsim Soyisim</label><input type="text" placeholder="Adınız ve soyadınız" /></div>
         <div class="form-group"><label>Cep Telefonu</label><input type="tel" placeholder="+90 5__ ___ __ __" /></div>
         <div class="form-group"><label>E-Posta Adresi</label><input type="email" placeholder="ornek@mail.com" /></div>
-        <div class="form-group"><label>Notunuz</label><textarea placeholder="Notunuz" onfocus="if(this.value===this.defaultValue)this.value=''" onblur="if(this.value==='')this.value=this.defaultValue"></textarea></div>
+        <div class="form-group"><label>Notunuz</label><textarea placeholder="Notunuz"></textarea></div>
         <button class="submit-btn" type="button"><span>Bizimle İletişime Geç</span></button>
       </div>
     </div>
@@ -318,13 +533,13 @@ def make_iletisim(head, nav, footer, cursor_html, cursor_script):
         <div class="ci-block"><div class="ci-label">Adres</div><div class="ci-value">—</div></div>
         <div class="ci-block"><div class="ci-label">Telefon</div><div class="ci-value">—</div></div>
         <div class="ci-block"><div class="ci-label">E-Posta</div><div class="ci-value">support@sundoratravel.com</div></div>
-        <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:var(--gold-dk);text-decoration:none">@sundoratravel</a></div></div>
+        <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:#DEC898;text-decoration:none">@sundoratravel</a></div></div>
       </div>
       <div class="contact-form-col">
         <h3>Mesaj Gönderin</h3>
         <div class="form-group"><label>İsim Soyisim</label><input type="text" placeholder="Adınız ve soyadınız" /></div>
         <div class="form-group"><label>E-Posta</label><input type="email" placeholder="ornek@mail.com" /></div>
-        <div class="form-group"><label>Mesajınız</label><textarea placeholder="Mesajınız" onfocus="if(this.value===this.defaultValue)this.value=''" onblur="if(this.value==='')this.value=this.defaultValue"></textarea></div>
+        <div class="form-group"><label>Mesajınız</label><textarea placeholder="Mesajınız"></textarea></div>
         <button class="submit-btn" type="button"><span>Gönder</span></button>
       </div>
     </div>
@@ -333,7 +548,7 @@ def make_iletisim(head, nav, footer, cursor_html, cursor_script):
     return page_template(head, nav, footer, cursor_html, cursor_script, body, "İletişim | Sundora Travel")
 
 def main():
-    print("\n🌍  Sundora Travel — Sayfa Üretici Başlatıldı\n")
+    print("\n🌍  Sundora Travel — Sayfa Üretici v2 Başlatıldı\n")
     if not os.path.exists(PUBLIC_DIR):
         print(f"HATA: '{PUBLIC_DIR}' klasörü bulunamadı.")
         return
@@ -356,7 +571,7 @@ def main():
     write_file("butik-grup-turlari.html", make_butik_grup_turlari(head, nav, footer, cursor_html, cursor_script))
     write_file("kisiye-ozel-seyahatler.html", make_kisiye_ozel(head, nav, footer, cursor_html, cursor_script))
     write_file("iletisim.html", make_iletisim(head, nav, footer, cursor_html, cursor_script))
-    print("\n✅  Tüm sayfalar başarıyla oluşturuldu!\n")
+    print("\n✅  Tüm sayfalar başarıyla güncellendi!\n")
 
 if __name__ == "__main__":
     main()
