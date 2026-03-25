@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Sundora Travel — Çok Sayfalı Platform Oluşturucu v2
-3 kritik düzeltme:
-  1. Tur kartları CSS fix (ec, eci, ecb, eco class'ları dahil edildi)
-  2. Lüks pastel mor-mavi gradient arka plan + beyaz metinler
-  3. Hamburger mobil menü
+Sundora Travel — Çok Sayfalı Platform Oluşturucu v3
+Düzeltmeler:
+  1. Nav scroll arka planı beyaz değil pastel krem/bej
+  2. Sayfa arka planı ana sayfayla uyumlu pastel krem-kahve
+  3. Mobil hamburger menü düzeltmesi
 """
 
 import re
@@ -131,10 +131,29 @@ def build_tour_cards(cards_data):
     </div>"""
     return cards_html
 
+# ─── DÜZELTİLMİŞ STILLER ───
+# 1. body arka planı → ana sayfayla uyumlu pastel krem-kahve
+# 2. nav.s arka planı → bej/krem (beyaz değil)
+# 3. Mobil menü düzeltmesi
 PAGE_STYLES = """
 <style>
-/* ── SAYFA GENEL ── */
-body { background: linear-gradient(135deg, #1a1628 0%, #221830 25%, #1e2340 50%, #1a2535 75%, #1e1f30 100%) !important; min-height: 100vh; }
+/* ── SAYFA ARKA PLANI — Ana sayfayla uyumlu pastel krem-kahve ── */
+body {
+  background: linear-gradient(160deg, #EDE8DC 0%, #E8E0D0 30%, #E4D8C8 60%, #EDE4D8 100%) !important;
+  min-height: 100vh;
+}
+
+/* ── NAV SCROLL ARKA PLANI — Beyaz değil pastel krem ── */
+/* Ana sayfanın .nav.s stilini override et */
+#nav.s {
+  background: rgba(237,232,220,0.97) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(196,160,104,0.2) !important;
+}
+#nav.s .nav-logo img { filter: none !important; opacity: 1 !important; }
+#nav.s .nav-links a { color: #505060 !important; }
+#nav.s .nav-lang { color: #909098 !important; }
+#nav.s .nav-cta { border-color: #C4A068 !important; color: #9A7040 !important; }
 
 /* ── MOBİL HAMBURGER MENÜ ── */
 .mob-menu-btn {
@@ -144,58 +163,66 @@ body { background: linear-gradient(135deg, #1a1628 0%, #221830 25%, #1e2340 50%,
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
-  z-index: 300;
+  padding: 6px;
+  z-index: 301;
+  position: relative;
 }
 .mob-menu-btn span {
   display: block;
   width: 24px;
-  height: 1px;
-  background: rgba(255,255,255,0.85);
+  height: 1.5px;
+  background: rgba(255,255,255,0.9);
   transition: all .35s;
+  border-radius: 2px;
 }
-.nav.s .mob-menu-btn span { background: #505060; }
-.mob-menu-btn.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
-.mob-menu-btn.open span:nth-child(2) { opacity: 0; }
-.mob-menu-btn.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+#nav.s .mob-menu-btn span { background: #505060; }
+.mob-menu-btn.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.mob-menu-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.mob-menu-btn.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
 
 .mob-nav-overlay {
-  display: none;
   position: fixed;
   inset: 0;
-  background: rgba(22,18,38,0.97);
-  backdrop-filter: blur(20px);
-  z-index: 250;
+  background: rgba(237,232,220,0.98);
+  backdrop-filter: blur(24px);
+  z-index: 299;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
 }
-.mob-nav-overlay.open { display: flex; }
+.mob-nav-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
 .mob-nav-overlay a {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: clamp(28px, 6vw, 42px);
   font-weight: 300;
-  letter-spacing: .08em;
-  color: rgba(255,250,242,.9);
+  letter-spacing: .06em;
+  color: #28282E;
   text-decoration: none;
   transition: color .3s;
 }
 .mob-nav-overlay a:hover { color: #C4A068; }
 .mob-nav-overlay .mob-cta {
   font-family: 'Jost', sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 300;
   letter-spacing: .22em;
   text-transform: uppercase;
   padding: .85rem 2.5rem;
-  border: 1px solid rgba(196,160,104,.5);
-  color: #DEC898;
+  border: 1px solid rgba(196,160,104,0.6);
+  color: #9A7040;
   margin-top: 1rem;
 }
 
 @media (max-width: 900px) {
-  .mob-menu-btn { display: flex; }
+  .mob-menu-btn { display: flex !important; }
   .nav-links { display: none !important; }
   .nav-cta { display: none !important; }
   .nav-lang { display: none !important; }
@@ -205,35 +232,39 @@ body { background: linear-gradient(135deg, #1a1628 0%, #221830 25%, #1e2340 50%,
 .page-section { max-width: 1440px; margin: 0 auto; padding: 4rem 4rem 8rem; }
 
 /* ── SAYFA BAŞLIK ── */
-.page-title-block { padding: 11rem 0 3rem; border-bottom: 1px solid rgba(196,160,104,0.25); margin-bottom: 5rem; }
-.page-title-block .lbl { color: #DEC898; }
-.page-title-block .lbl::before { background: #DEC898; }
-.page-title-block .sh { color: rgba(255,250,242,.95); }
-.page-title-block .sh em { color: #DEC898; }
+.page-title-block {
+  padding: 11rem 0 3rem;
+  border-bottom: 1px solid rgba(196,160,104,0.3);
+  margin-bottom: 5rem;
+}
+.page-title-block .lbl { color: #C4A068; }
+.page-title-block .lbl::before { background: #C4A068; }
+.page-title-block .sh { color: #28282E; }
+.page-title-block .sh em { color: #9A7040; }
 
-/* ── FİLTRE ── */
+/* ── FİLTRE ALANI ── */
 .filter-bar {
   display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(16px);
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(196,160,104,0.22);
-  padding: 2rem 2.5rem; margin-bottom: 4rem;
+  padding: 2rem 2.5rem;
+  margin-bottom: 4rem;
 }
 .filter-group { display: flex; flex-direction: column; gap: .45rem; flex: 1; min-width: 160px; }
-.filter-group label { font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #DEC898; }
+.filter-group label { font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #C4A068; }
 .filter-group select,
 .filter-group input[type="date"] {
   font-family: 'Jost', sans-serif; font-size: 12px; font-weight: 300;
-  color: rgba(255,250,242,.9); background: transparent;
-  border: none; border-bottom: 1px solid rgba(196,160,104,0.35);
+  color: #28282E; background: transparent;
+  border: none; border-bottom: 1px solid rgba(196,160,104,0.4);
   padding: .55rem 0; outline: none; cursor: pointer;
   -webkit-appearance: none; appearance: none; width: 100%;
   transition: border-color .3s;
 }
-.filter-group select option { background: #221830; color: rgba(255,250,242,.9); }
+.filter-group select option { background: #EDE8DC; color: #28282E; }
 .filter-group select:focus,
 .filter-group input:focus { border-color: #C4A068; }
-.filter-group input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(.5); }
 .filter-btn {
   font-family: 'Jost', sans-serif; font-size: 9px; font-weight: 400;
   letter-spacing: .22em; text-transform: uppercase;
@@ -243,7 +274,7 @@ body { background: linear-gradient(135deg, #1a1628 0%, #221830 25%, #1e2340 50%,
 }
 .filter-btn:hover { background: #9A7040; }
 
-/* ── TUR KARTLARI (FIX) ── */
+/* ── TUR KARTLARI ── */
 .tour-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; margin-bottom: 4rem; }
 .ec { cursor: pointer; overflow: hidden; }
 .eci { aspect-ratio: 3/4; position: relative; overflow: hidden; }
@@ -271,62 +302,59 @@ body { background: linear-gradient(135deg, #1a1628 0%, #221830 25%, #1e2340 50%,
 
 /* ── HAKKIMIZDA ── */
 .about-text { max-width: 780px; }
-.about-text p { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 17px; font-style: italic; line-height: 2.1; color: rgba(240,232,220,.75); margin-bottom: 2rem; }
-.about-text p:first-child { font-size: 22px; color: rgba(255,250,242,.95); font-style: normal; }
+.about-text p { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 17px; font-style: italic; line-height: 2.1; color: #505060; margin-bottom: 2rem; }
+.about-text p:first-child { font-size: 22px; color: #28282E; font-style: normal; }
 
-/* ── İLETİŞİM / FORM ── */
+/* ── İLETİŞİM FORM ── */
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8rem; padding-top: 2rem; }
-.contact-info-col h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(28px,3vw,44px); font-weight: 300; color: rgba(255,250,242,.95); margin-bottom: 3rem; line-height: 1.2; }
-.contact-info-col h3 em { font-style: italic; color: #DEC898; }
+.contact-info-col h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(28px,3vw,44px); font-weight: 300; color: #28282E; margin-bottom: 3rem; line-height: 1.2; }
+.contact-info-col h3 em { font-style: italic; color: #9A7040; }
 .ci-block { margin-bottom: 2.5rem; }
-.ci-label { font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #DEC898; margin-bottom: .5rem; display: flex; align-items: center; gap: .85rem; }
-.ci-label::before { content: ''; width: 22px; height: 1px; background: #DEC898; }
-.ci-value { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px; font-weight: 300; color: rgba(255,250,242,.85); line-height: 1.6; }
-.contact-form-col h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(22px,2.5vw,36px); font-weight: 300; color: rgba(255,250,242,.95); margin-bottom: 2.5rem; line-height: 1.2; }
+.ci-label { font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #C4A068; margin-bottom: .5rem; display: flex; align-items: center; gap: .85rem; }
+.ci-label::before { content: ''; width: 22px; height: 1px; background: #C4A068; }
+.ci-value { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px; font-weight: 300; color: #28282E; line-height: 1.6; }
+.contact-form-col h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(22px,2.5vw,36px); font-weight: 300; color: #28282E; margin-bottom: 2.5rem; line-height: 1.2; }
 .form-group { margin-bottom: 1.75rem; }
-.form-group label { display: block; font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #DEC898; margin-bottom: .5rem; }
+.form-group label { display: block; font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #C4A068; margin-bottom: .5rem; }
 .form-group input,
 .form-group textarea {
   font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 300;
-  color: rgba(255,250,242,.9); background: transparent;
-  border: none; border-bottom: 1px solid rgba(196,160,104,.3);
+  color: #28282E; background: transparent;
+  border: none; border-bottom: 1px solid rgba(196,160,104,0.35);
   padding: .6rem 0; width: 100%; outline: none;
   transition: border-color .3s; resize: none;
 }
 .form-group input::placeholder,
-.form-group textarea::placeholder { color: rgba(255,250,242,.3); }
+.form-group textarea::placeholder { color: rgba(40,40,46,0.35); }
 .form-group input:focus,
 .form-group textarea:focus { border-color: #C4A068; }
-.form-group textarea { min-height: 120px; background: rgba(255,255,255,.04); padding: .8rem; border: 1px solid rgba(196,160,104,.2); }
+.form-group textarea { min-height: 120px; background: rgba(255,255,255,0.4); padding: .8rem; border: 1px solid rgba(196,160,104,0.2); }
 .submit-btn {
   font-family: 'Jost', sans-serif; font-size: 9px; font-weight: 400;
   letter-spacing: .22em; text-transform: uppercase;
   padding: 1rem 3rem; background: transparent;
-  color: rgba(255,250,242,.9); border: 1px solid rgba(196,160,104,.5);
+  color: #28282E; border: 1px solid rgba(40,40,46,0.4);
   cursor: pointer; display: inline-flex; align-items: center; gap: 1rem;
   position: relative; overflow: hidden; transition: color .4s; margin-top: .5rem;
 }
-.submit-btn::before { content: ''; position: absolute; inset: 0; background: #C4A068; transform: translateX(-100%); transition: transform .45s cubic-bezier(.25,.46,.45,.94); }
+.submit-btn::before { content: ''; position: absolute; inset: 0; background: #28282E; transform: translateX(-100%); transition: transform .45s cubic-bezier(.25,.46,.45,.94); }
 .submit-btn span { position: relative; z-index: 1; }
-.submit-btn:hover { color: #fff; border-color: #C4A068; }
+.submit-btn:hover { color: #fff; }
 .submit-btn:hover::before { transform: translateX(0); }
 
-/* ── CTA / BTN ── */
+/* ── CTA BUTONU ── */
 .cta-center { text-align: center; padding: 2rem 0 4rem; }
 .btn-e {
   font-size: 9px; font-weight: 400; letter-spacing: .22em; text-transform: uppercase;
-  padding: .9rem 2.25rem; border: 1px solid rgba(196,160,104,.5);
-  color: rgba(255,250,242,.9); background: transparent; cursor: pointer;
+  padding: .9rem 2.25rem; border: 1px solid rgba(40,40,46,0.4);
+  color: #28282E; background: transparent; cursor: pointer;
   display: inline-flex; align-items: center; gap: 1rem;
   position: relative; overflow: hidden; transition: color .4s; text-decoration: none;
 }
-.btn-e::before { content: ''; position: absolute; inset: 0; background: #C4A068; transform: translateX(-100%); transition: transform .45s cubic-bezier(.25,.46,.45,.94); }
+.btn-e::before { content: ''; position: absolute; inset: 0; background: #28282E; transform: translateX(-100%); transition: transform .45s cubic-bezier(.25,.46,.45,.94); }
 .btn-e span, .btn-e svg { position: relative; z-index: 1; }
-.btn-e:hover { color: #fff; border-color: #C4A068; }
+.btn-e:hover { color: #fff; }
 .btn-e:hover::before { transform: translateX(0); }
-
-/* ── FOOTER ÜZERİNDE AÇIKLIK ── */
-footer { background: rgba(0,0,0,.35) !important; }
 
 /* ── MOBİL RESPONSIVE ── */
 @media (max-width: 768px) {
@@ -355,10 +383,11 @@ MOB_MENU_HTML = """
 MOB_MENU_SCRIPT = """
 <script>
 (function(){
-  const btn = document.getElementById('mobMenuBtn');
-  const overlay = document.getElementById('mobNav');
+  var btn = document.getElementById('mobMenuBtn');
+  var overlay = document.getElementById('mobNav');
   if(!btn || !overlay) return;
-  btn.addEventListener('click', function(){
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
     btn.classList.toggle('open');
     overlay.classList.toggle('open');
   });
@@ -368,12 +397,17 @@ MOB_MENU_SCRIPT = """
       overlay.classList.remove('open');
     });
   });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      btn.classList.remove('open');
+      overlay.classList.remove('open');
+    }
+  });
 })();
 </script>
 """
 
 def inject_mob_btn(nav_html):
-    """nav-r div'inin içine hamburger butonu ekle."""
     return nav_html.replace(
         '<div class="nav-r">',
         '<div class="nav-r"><button class="mob-menu-btn" id="mobMenuBtn" aria-label="Menü"><span></span><span></span><span></span></button>'
@@ -533,7 +567,7 @@ def make_iletisim(head, nav, footer, cursor_html, cursor_script):
         <div class="ci-block"><div class="ci-label">Adres</div><div class="ci-value">—</div></div>
         <div class="ci-block"><div class="ci-label">Telefon</div><div class="ci-value">—</div></div>
         <div class="ci-block"><div class="ci-label">E-Posta</div><div class="ci-value">support@sundoratravel.com</div></div>
-        <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:#DEC898;text-decoration:none">@sundoratravel</a></div></div>
+        <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:#9A7040;text-decoration:none">@sundoratravel</a></div></div>
       </div>
       <div class="contact-form-col">
         <h3>Mesaj Gönderin</h3>
@@ -548,7 +582,7 @@ def make_iletisim(head, nav, footer, cursor_html, cursor_script):
     return page_template(head, nav, footer, cursor_html, cursor_script, body, "İletişim | Sundora Travel")
 
 def main():
-    print("\n🌍  Sundora Travel — Sayfa Üretici v2 Başlatıldı\n")
+    print("\n🌍  Sundora Travel — Sayfa Üretici v3 Başlatıldı\n")
     if not os.path.exists(PUBLIC_DIR):
         print(f"HATA: '{PUBLIC_DIR}' klasörü bulunamadı.")
         return
