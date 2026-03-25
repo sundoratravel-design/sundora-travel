@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Sundora Travel — Çok Sayfalı Platform Oluşturucu v3
-Düzeltmeler:
-  1. Nav scroll arka planı beyaz değil pastel krem/bej
-  2. Sayfa arka planı ana sayfayla uyumlu pastel krem-kahve
-  3. Mobil hamburger menü düzeltmesi
+Sundora Travel — Çok Sayfalı Platform Oluşturucu v4
+Değişiklikler:
+  1. Hamburger menü KALDIRILDI — mobilde linkler yatay scroll şerit olarak görünür
+  2. Nav scroll rengi: açık arka plan=koyu yazı, koyu arka plan=açık yazı (JS ile)
 """
 
 import re
@@ -55,6 +54,8 @@ def build_new_nav(original_html):
         updated,
         flags=re.DOTALL
     )
+    # Ana sayfaya mobil nav CSS + scroll renk JS ekle
+    updated = updated.replace('</head>', INDEX_MOBILE_NAV_CSS + INDEX_NAV_CONTRAST_JS + '</head>')
     return updated
 
 def update_hero_buttons(html):
@@ -92,6 +93,94 @@ def extract_cursor_html(html):
     if cur: result += cur.group(0) + "\n"
     if ring: result += ring.group(0) + "\n"
     return result
+
+# ─── ANA SAYFA İÇİN MOBİL NAV CSS ───
+# Sadece index.html'e enjekte edilir
+# Nav linkleri mobilden yatay scroll şerit olarak görünür
+INDEX_MOBILE_NAV_CSS = """
+<style id="sundora-mobile-nav">
+@media (max-width: 900px) {
+  .nav {
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem !important;
+    gap: .5rem;
+  }
+  .nav-logo img { height: 60px !important; }
+  .nav-links {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    width: 100% !important;
+    order: 3;
+    gap: 1.5rem !important;
+    padding: .4rem 0 .5rem !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    flex-wrap: nowrap !important;
+  }
+  .nav-links::-webkit-scrollbar { display: none !important; }
+  .nav-links li { flex-shrink: 0 !important; }
+  .nav-links a {
+    font-size: 10px !important;
+    letter-spacing: .14em !important;
+    white-space: nowrap !important;
+  }
+  .nav-r {
+    display: flex !important;
+    align-items: center !important;
+    gap: .75rem !important;
+  }
+  .nav-lang { font-size: 11px !important; }
+  .nav-cta {
+    font-size: 10px !important;
+    padding: .55rem 1.1rem !important;
+    letter-spacing: .12em !important;
+  }
+}
+@media (max-width: 480px) {
+  .nav-cta { display: none !important; }
+}
+</style>
+"""
+
+# ─── NAV KONTRAST JS (tüm sayfalarda) ───
+# Scroll pozisyonuna göre arka plan rengini okuyup nav link rengini ayarlar
+INDEX_NAV_CONTRAST_JS = """
+<script id="sundora-nav-contrast">
+(function(){
+  function getNavBg(){
+    var nav = document.getElementById('nav');
+    if(!nav) return 'dark';
+    if(nav.classList.contains('s')) return 'light'; // scroll'da açık arka plan
+    return 'dark'; // hero'da koyu arka plan
+  }
+  function updateNavColors(){
+    var nav = document.getElementById('nav');
+    if(!nav) return;
+    var isLight = nav.classList.contains('s');
+    var links = nav.querySelectorAll('.nav-links a');
+    var lang = nav.querySelector('.nav-lang');
+    var cta = nav.querySelector('.nav-cta');
+    if(isLight){
+      links.forEach(function(a){ a.style.color = '#28282E'; });
+      if(lang) lang.style.color = '#909098';
+    } else {
+      links.forEach(function(a){ a.style.color = 'rgba(255,255,255,0.85)'; });
+      if(lang) lang.style.color = 'rgba(255,255,255,0.55)';
+    }
+  }
+  var nav = document.getElementById('nav');
+  if(nav){
+    var observer = new MutationObserver(updateNavColors);
+    observer.observe(nav, {attributes: true, attributeFilter: ['class']});
+  }
+  window.addEventListener('scroll', updateNavColors);
+  window.addEventListener('load', updateNavColors);
+  updateNavColors();
+})();
+</script>
+"""
 
 TOUR_CARDS_DATA = [
     ("01", "bg-h", "Japonya & Güney Kore", "Asya", "12 Gün"),
@@ -131,105 +220,65 @@ def build_tour_cards(cards_data):
     </div>"""
     return cards_html
 
-# ─── DÜZELTİLMİŞ STILLER ───
-# 1. body arka planı → ana sayfayla uyumlu pastel krem-kahve
-# 2. nav.s arka planı → bej/krem (beyaz değil)
-# 3. Mobil menü düzeltmesi
 PAGE_STYLES = """
 <style>
-/* ── SAYFA ARKA PLANI — Ana sayfayla uyumlu pastel krem-kahve ── */
+/* ── SAYFA ARKA PLANI ── */
 body {
   background: linear-gradient(160deg, #EDE8DC 0%, #E8E0D0 30%, #E4D8C8 60%, #EDE4D8 100%) !important;
   min-height: 100vh;
 }
 
-/* ── NAV SCROLL ARKA PLANI — Beyaz değil pastel krem ── */
-/* Ana sayfanın .nav.s stilini override et */
+/* ── NAV SCROLL ARKA PLANI ── */
 #nav.s {
   background: rgba(237,232,220,0.97) !important;
   backdrop-filter: blur(20px) !important;
   border-bottom: 1px solid rgba(196,160,104,0.2) !important;
 }
 #nav.s .nav-logo img { filter: none !important; opacity: 1 !important; }
-#nav.s .nav-links a { color: #505060 !important; }
-#nav.s .nav-lang { color: #909098 !important; }
-#nav.s .nav-cta { border-color: #C4A068 !important; color: #9A7040 !important; }
 
-/* ── MOBİL HAMBURGER MENÜ ── */
-.mob-menu-btn {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  z-index: 301;
-  position: relative;
-}
-.mob-menu-btn span {
-  display: block;
-  width: 24px;
-  height: 1.5px;
-  background: rgba(255,255,255,0.9);
-  transition: all .35s;
-  border-radius: 2px;
-}
-#nav.s .mob-menu-btn span { background: #505060; }
-.mob-menu-btn.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-.mob-menu-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-.mob-menu-btn.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
-
-.mob-nav-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(237,232,220,0.98);
-  backdrop-filter: blur(24px);
-  z-index: 299;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2.5rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .35s ease;
-}
-.mob-nav-overlay.open {
-  opacity: 1;
-  pointer-events: all;
-}
-.mob-nav-overlay a {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: clamp(28px, 6vw, 42px);
-  font-weight: 300;
-  letter-spacing: .06em;
-  color: #28282E;
-  text-decoration: none;
-  transition: color .3s;
-}
-.mob-nav-overlay a:hover { color: #C4A068; }
-.mob-nav-overlay .mob-cta {
-  font-family: 'Jost', sans-serif;
-  font-size: 10px;
-  font-weight: 300;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  padding: .85rem 2.5rem;
-  border: 1px solid rgba(196,160,104,0.6);
-  color: #9A7040;
-  margin-top: 1rem;
-}
-
+/* ── MOBİL NAV — yatay scroll şerit, hamburger YOK ── */
 @media (max-width: 900px) {
-  .mob-menu-btn { display: flex !important; }
-  .nav-links { display: none !important; }
-  .nav-cta { display: none !important; }
-  .nav-lang { display: none !important; }
+  #nav {
+    flex-wrap: wrap !important;
+    padding: 1rem 1.25rem !important;
+    gap: .5rem !important;
+  }
+  #nav .nav-logo img { height: 60px !important; }
+  #nav .nav-links {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    width: 100% !important;
+    order: 3 !important;
+    gap: 1.5rem !important;
+    padding: .4rem 0 .5rem !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    flex-wrap: nowrap !important;
+  }
+  #nav .nav-links::-webkit-scrollbar { display: none !important; }
+  #nav .nav-links li { flex-shrink: 0 !important; }
+  #nav .nav-links a {
+    font-size: 10px !important;
+    letter-spacing: .14em !important;
+    white-space: nowrap !important;
+  }
+  #nav .nav-r {
+    display: flex !important;
+    align-items: center !important;
+    gap: .75rem !important;
+  }
+  #nav .nav-lang { font-size: 11px !important; }
+  #nav .nav-cta {
+    font-size: 10px !important;
+    padding: .55rem 1.1rem !important;
+    letter-spacing: .12em !important;
+  }
 }
-
-/* ── SAYFA BÖLÜM ── */
-.page-section { max-width: 1440px; margin: 0 auto; padding: 4rem 4rem 8rem; }
+@media (max-width: 480px) {
+  #nav .nav-cta { display: none !important; }
+}
 
 /* ── SAYFA BAŞLIK ── */
 .page-title-block {
@@ -242,14 +291,16 @@ body {
 .page-title-block .sh { color: #28282E; }
 .page-title-block .sh em { color: #9A7040; }
 
-/* ── FİLTRE ALANI ── */
+/* ── SAYFA BÖLÜM ── */
+.page-section { max-width: 1440px; margin: 0 auto; padding: 4rem 4rem 8rem; }
+
+/* ── FİLTRE ── */
 .filter-bar {
   display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;
   background: rgba(255,255,255,0.55);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(196,160,104,0.22);
-  padding: 2rem 2.5rem;
-  margin-bottom: 4rem;
+  padding: 2rem 2.5rem; margin-bottom: 4rem;
 }
 .filter-group { display: flex; flex-direction: column; gap: .45rem; flex: 1; min-width: 160px; }
 .filter-group label { font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #C4A068; }
@@ -263,8 +314,7 @@ body {
   transition: border-color .3s;
 }
 .filter-group select option { background: #EDE8DC; color: #28282E; }
-.filter-group select:focus,
-.filter-group input:focus { border-color: #C4A068; }
+.filter-group select:focus, .filter-group input:focus { border-color: #C4A068; }
 .filter-btn {
   font-family: 'Jost', sans-serif; font-size: 9px; font-weight: 400;
   letter-spacing: .22em; text-transform: uppercase;
@@ -305,7 +355,7 @@ body {
 .about-text p { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 17px; font-style: italic; line-height: 2.1; color: #505060; margin-bottom: 2rem; }
 .about-text p:first-child { font-size: 22px; color: #28282E; font-style: normal; }
 
-/* ── İLETİŞİM FORM ── */
+/* ── FORM ── */
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8rem; padding-top: 2rem; }
 .contact-info-col h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(28px,3vw,44px); font-weight: 300; color: #28282E; margin-bottom: 3rem; line-height: 1.2; }
 .contact-info-col h3 em { font-style: italic; color: #9A7040; }
@@ -313,27 +363,23 @@ body {
 .ci-label { font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #C4A068; margin-bottom: .5rem; display: flex; align-items: center; gap: .85rem; }
 .ci-label::before { content: ''; width: 22px; height: 1px; background: #C4A068; }
 .ci-value { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px; font-weight: 300; color: #28282E; line-height: 1.6; }
-.contact-form-col h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(22px,2.5vw,36px); font-weight: 300; color: #28282E; margin-bottom: 2.5rem; line-height: 1.2; }
+.contact-form-col h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(22px,2.5vw,36px); font-weight: 300; color: #28282E; margin-bottom: 2.5rem; }
 .form-group { margin-bottom: 1.75rem; }
 .form-group label { display: block; font-size: 8px; font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: #C4A068; margin-bottom: .5rem; }
-.form-group input,
-.form-group textarea {
+.form-group input, .form-group textarea {
   font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 300;
   color: #28282E; background: transparent;
   border: none; border-bottom: 1px solid rgba(196,160,104,0.35);
-  padding: .6rem 0; width: 100%; outline: none;
-  transition: border-color .3s; resize: none;
+  padding: .6rem 0; width: 100%; outline: none; transition: border-color .3s; resize: none;
 }
-.form-group input::placeholder,
-.form-group textarea::placeholder { color: rgba(40,40,46,0.35); }
-.form-group input:focus,
-.form-group textarea:focus { border-color: #C4A068; }
+.form-group input::placeholder, .form-group textarea::placeholder { color: rgba(40,40,46,0.35); }
+.form-group input:focus, .form-group textarea:focus { border-color: #C4A068; }
 .form-group textarea { min-height: 120px; background: rgba(255,255,255,0.4); padding: .8rem; border: 1px solid rgba(196,160,104,0.2); }
 .submit-btn {
   font-family: 'Jost', sans-serif; font-size: 9px; font-weight: 400;
   letter-spacing: .22em; text-transform: uppercase;
-  padding: 1rem 3rem; background: transparent;
-  color: #28282E; border: 1px solid rgba(40,40,46,0.4);
+  padding: 1rem 3rem; background: transparent; color: #28282E;
+  border: 1px solid rgba(40,40,46,0.4);
   cursor: pointer; display: inline-flex; align-items: center; gap: 1rem;
   position: relative; overflow: hidden; transition: color .4s; margin-top: .5rem;
 }
@@ -341,8 +387,6 @@ body {
 .submit-btn span { position: relative; z-index: 1; }
 .submit-btn:hover { color: #fff; }
 .submit-btn:hover::before { transform: translateX(0); }
-
-/* ── CTA BUTONU ── */
 .cta-center { text-align: center; padding: 2rem 0 4rem; }
 .btn-e {
   font-size: 9px; font-weight: 400; letter-spacing: .22em; text-transform: uppercase;
@@ -362,7 +406,7 @@ body {
   .contact-grid { grid-template-columns: 1fr; gap: 3rem; }
   .filter-bar { flex-direction: column; }
   .page-section { padding: 2rem 1.5rem 5rem; }
-  .page-title-block { padding: 8rem 0 2rem; }
+  .page-title-block { padding: 9rem 0 2rem; }
 }
 @media (max-width: 480px) {
   .tour-grid { grid-template-columns: 1fr; }
@@ -370,52 +414,46 @@ body {
 </style>
 """
 
-MOB_MENU_HTML = """
-<div class="mob-nav-overlay" id="mobNav">
-  <a href="/butik-grup-turlari.html">Butik Grup Turları</a>
-  <a href="/rotalar.html">Rotalar</a>
-  <a href="/hakkimizda.html">Hakkımızda</a>
-  <a href="/iletisim.html">İletişim</a>
-  <a href="/seyahatini-planla.html" class="mob-cta">Seyahatini Planla</a>
-</div>
-"""
-
-MOB_MENU_SCRIPT = """
+# Yeni sayfalara eklenen nav kontrast JS (hamburger YOK)
+PAGE_NAV_SCRIPT = """
 <script>
 (function(){
-  var btn = document.getElementById('mobMenuBtn');
-  var overlay = document.getElementById('mobNav');
-  if(!btn || !overlay) return;
-  btn.addEventListener('click', function(e){
-    e.stopPropagation();
-    btn.classList.toggle('open');
-    overlay.classList.toggle('open');
-  });
-  overlay.querySelectorAll('a').forEach(function(a){
-    a.addEventListener('click', function(){
-      btn.classList.remove('open');
-      overlay.classList.remove('open');
-    });
-  });
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape'){
-      btn.classList.remove('open');
-      overlay.classList.remove('open');
+  var nav = document.getElementById('nav');
+  if(!nav) return;
+
+  function updateColors(){
+    var isLight = nav.classList.contains('s');
+    var links = nav.querySelectorAll('.nav-links a');
+    var lang = nav.querySelector('.nav-lang');
+    var cta = nav.querySelector('.nav-cta');
+    if(isLight){
+      links.forEach(function(a){ a.style.color='#28282E'; });
+      if(lang) lang.style.color='#909098';
+      if(cta){ cta.style.borderColor='#C4A068'; cta.style.color='#9A7040'; }
+    } else {
+      links.forEach(function(a){ a.style.color='rgba(255,255,255,0.85)'; });
+      if(lang) lang.style.color='rgba(255,255,255,0.55)';
+      if(cta){ cta.style.borderColor='rgba(255,255,255,0.3)'; cta.style.color='rgba(255,255,255,0.9)'; }
     }
+  }
+
+  window.addEventListener('scroll', function(){
+    nav.classList.toggle('s', scrollY > 80);
+    updateColors();
   });
+
+  var observer = new MutationObserver(updateColors);
+  observer.observe(nav, {attributes:true, attributeFilter:['class']});
+
+  // Yeni sayfalarda baştan scroll var, hemen uygula
+  if(scrollY > 80){ nav.classList.add('s'); }
+  updateColors();
 })();
 </script>
 """
 
-def inject_mob_btn(nav_html):
-    return nav_html.replace(
-        '<div class="nav-r">',
-        '<div class="nav-r"><button class="mob-menu-btn" id="mobMenuBtn" aria-label="Menü"><span></span><span></span><span></span></button>'
-    )
-
 def page_template(head_content, nav_html, footer_html, cursor_html,
                   cursor_script, page_body, page_title="Sundora Travel"):
-    nav_with_btn = inject_mob_btn(nav_html)
     return f"""<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -425,16 +463,11 @@ def page_template(head_content, nav_html, footer_html, cursor_html,
 </head>
 <body>
 {cursor_html}
-{MOB_MENU_HTML}
-{nav_with_btn}
+{nav_html}
 {page_body}
 {footer_html}
 {cursor_script}
-<script>
-const nav=document.getElementById('nav');
-if(nav) window.addEventListener('scroll',function(){{nav.classList.toggle('s',scrollY>80)}});
-</script>
-{MOB_MENU_SCRIPT}
+{PAGE_NAV_SCRIPT}
 </body>
 </html>"""
 
@@ -582,7 +615,7 @@ def make_iletisim(head, nav, footer, cursor_html, cursor_script):
     return page_template(head, nav, footer, cursor_html, cursor_script, body, "İletişim | Sundora Travel")
 
 def main():
-    print("\n🌍  Sundora Travel — Sayfa Üretici v3 Başlatıldı\n")
+    print("\n🌍  Sundora Travel — Sayfa Üretici v4 Başlatıldı\n")
     if not os.path.exists(PUBLIC_DIR):
         print(f"HATA: '{PUBLIC_DIR}' klasörü bulunamadı.")
         return
