@@ -10,11 +10,30 @@ def write_file(filename, content):
     with open(path, "w", encoding="utf-8") as f: f.write(content)
     print(f"  ✓ {path} oluşturuldu.")
 def remove_cursor(html):
+    # cursor:none kaldır
     html = re.sub(r'cursor\s*:\s*none\s*;?\s*', '', html)
+    # CSS cursor bloklarını kaldır
     html = re.sub(r'/\* CURSOR \*/.*?\.cur-ring\{[^}]*\}', '', html, flags=re.DOTALL)
+    # cursor div HTML'lerini kaldır
     html = re.sub(r'<div id="cur"[^>]*>.*?</div>', '', html, flags=re.DOTALL)
     html = re.sub(r'<div id="curRing"[^>]*>.*?</div>', '', html, flags=re.DOTALL)
+    # cursor JS event'lerini kaldır
     html = re.sub(r'// CURSOR\s*\nconst cur=.*?anim\}\)\(\);', '', html, flags=re.DOTALL)
+    # Ekstra: herhangi bir #cur veya #curRing CSS bloğunu kaldır
+    html = re.sub(r'#cur\s*\{[^}]*\}', '', html)
+    html = re.sub(r'#curRing\s*\{[^}]*\}', '', html)
+    html = re.sub(r'\.cur-ring\s*\{[^}]*\}', '', html)
+    # mousemove ile ilgili cursor kodlarını kaldır
+    html = re.sub(r'document\.addEventListener\([\'"]mousemove[\'"].*?\}\s*\)', '', html, flags=re.DOTALL)
+    return html
+def fix_hero_gap(html):
+    # margin ve padding sıfırla - body ve html için
+    html = re.sub(r'(html\s*,\s*body\s*\{[^}]*?)margin\s*:\s*[^;]+;', r'\1margin:0;', html)
+    html = re.sub(r'(html\s*,\s*body\s*\{[^}]*?)padding\s*:\s*[^;]+;', r'\1padding:0;', html)
+    # .hero veya hero section padding-top kaldır
+    html = re.sub(r'(\.hero\s*\{[^}]*?)padding-top\s*:\s*[^;]+;', r'\1padding-top:0;', html)
+    # hero-photo üstündeki boşluğu sıfırla
+    html = re.sub(r'(\.hero-photo\s*\{)', r'.hero-photo{margin-top:0 !important;display:block;}\n\1', html)
     return html
 def update_nav_style(html):
     html = re.sub(r'\.nav\.s\{background:rgba\(248,242,234[^}]+\}', '.nav.s{background:rgba(42,32,18,.9);backdrop-filter:blur(20px);padding:.75rem 4rem .75rem 2rem;border-bottom:1px solid rgba(196,160,104,.25)}', html)
@@ -22,6 +41,10 @@ def update_nav_style(html):
     html = re.sub(r'\.nav\.s \.nav-lang\{color:var\(--smoke\)\}', '.nav.s .nav-lang{color:rgba(255,248,235,.5)}', html)
     html = re.sub(r'\.nav\.s \.nav-cta\{border-color:var\(--gold\);color:var\(--gold-dk\)\}', '.nav.s .nav-cta{border-color:rgba(222,200,152,.6);color:rgba(222,200,152,.95)}', html)
     html = re.sub(r'\.nav\.s \.nav-logo img\{filter:none;opacity:1;height:120px\}', '.nav.s .nav-logo img{filter:brightness(0) invert(1);opacity:.9;height:120px}', html)
+    return html
+def inject_nav_bar_bg(html):
+    # Nav-links'e her zaman koyu arka plan (scroll'dan bağımsız kalıcı bar)
+    # nav-links alanına sabit koyu arka plan ekle - inline style injection via CSS
     return html
 def update_footer(html):
     old_soc = '<div class="ft-soc"><a href="https://instagram.com/sundoratravel" target="_blank"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle></svg></a></div>'
@@ -57,6 +80,23 @@ def remove_sections(html):
     html = re.sub(r'<section class="ig-sec">.*?</section>', '', html, flags=re.DOTALL)
     html = re.sub(r'<section class="mem-sec">.*?</section>', '', html, flags=re.DOTALL)
     html = re.sub(r'<section style="background:linear-gradient[^"]*"[^>]*>\s*<div class="wrap"><div class="intro">.*?</div>\s*</div>\s*</section>', '', html, flags=re.DOTALL)
+    return html
+def update_exp_section_text(html):
+    # "Experience Categories" -> "Seyahat Tarzını Seç"
+    html = re.sub(r'Experience Categories', 'Seyahat Tarzını Seç', html)
+    # "All Experiences →" -> "Tüm Rotalar →" with correct href
+    html = re.sub(
+        r'<a[^>]*href=["\'][^"\']*["\'][^>]*>\s*All Experiences\s*→\s*</a>',
+        '<a href="/butik-grup-turlari.html" class="exp-more">Tüm Rotalar →</a>',
+        html, flags=re.DOTALL
+    )
+    # Also try button/span variants
+    html = re.sub(r'All Experiences\s*→', 'Tüm Rotalar →', html)
+    html = re.sub(
+        r'(href=["\'])([^"\']*?)(["\'][^>]*>Tüm Rotalar →)',
+        r'\g<1>/butik-grup-turlari.html\g<3>',
+        html
+    )
     return html
 def update_exp_cards(html):
     cards = [('bg-h','d1','Şarap &amp; Gastronomi Deneyimleri','/sarap.jpg'),('bg-s','d2','Doğayla İç İçe','/doga.jpg'),('bg-c','d3','Kültürel Keşifler','/culture.jpg'),('bg-p','d4','Popüler Destinasyonlar','/popular.jpg')]
@@ -101,40 +141,62 @@ def build_tour_cards():
     return h
 PAGE_STYLES = """
 <style>
+/* ── RESET ── */
+html,body{margin:0;padding:0}
+/* ── HERO GAP FIX ── */
+.hero-photo{margin-top:0 !important;padding-top:0 !important;display:block;vertical-align:top}
+.hero,.hero-wrap,.hero-section{margin-top:0 !important;padding-top:0 !important}
+/* ── CURSOR RESET ── */
+*{cursor:auto !important}
+a,button,[role=button],[type=button],[type=submit],label,select{cursor:pointer !important}
+
+/* ── NAV BAR kalıcı koyu arka plan ── */
 body{background:linear-gradient(160deg,#EDE8DC 0%,#E8E0D0 30%,#E4D8C8 60%,#EDE4D8 100%) !important;min-height:100vh}
-#nav.s{background:rgba(42,32,18,.9) !important;backdrop-filter:blur(20px) !important;border-bottom:1px solid rgba(196,160,104,.2) !important}
-#nav.s .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.9 !important}
-#nav.s .nav-links a{color:rgba(255,248,235,.9) !important}
-#nav.s .nav-lang{color:rgba(255,248,235,.5) !important}
-#nav.s .nav-cta{border-color:rgba(222,200,152,.6) !important;color:rgba(222,200,152,.95) !important}
-.mob-menu-btn{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;z-index:301;position:relative}
-.mob-menu-btn span{display:block;width:24px;height:1.5px;background:rgba(255,255,255,.9);transition:all .35s;border-radius:2px}
+#nav{background:rgba(28,20,10,.82) !important;backdrop-filter:blur(18px) !important;border-bottom:1px solid rgba(196,160,104,.2) !important}
+#nav .nav-links a{color:rgba(255,248,235,.88) !important;font-size:15px}
+#nav .nav-lang{color:rgba(255,248,235,.5) !important}
+#nav .nav-cta{border-color:rgba(222,200,152,.55) !important;color:rgba(222,200,152,.92) !important}
+#nav .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.88 !important}
+#nav.s{background:rgba(28,20,10,.92) !important;backdrop-filter:blur(24px) !important;border-bottom:1px solid rgba(196,160,104,.3) !important}
+#nav.s .nav-links a{color:rgba(255,248,235,.95) !important}
+#nav.s .nav-cta{border-color:rgba(222,200,152,.7) !important;color:rgba(222,200,152,.98) !important}
+#nav.s .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.95 !important}
+
+/* ── MOBILE HAMBURGER MENU ── */
+.mob-menu-btn{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer !important;padding:6px;z-index:301;position:relative}
+.mob-menu-btn span{display:block;width:24px;height:1.5px;background:rgba(255,248,235,.9);transition:all .35s;border-radius:2px}
 #nav.s .mob-menu-btn span{background:rgba(255,248,235,.9)}
 .mob-menu-btn.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
 .mob-menu-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
 .mob-menu-btn.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
-.mob-nav-overlay{position:fixed;inset:0;background:rgba(237,232,220,.98);backdrop-filter:blur(24px);z-index:299;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5rem;opacity:0;pointer-events:none;transition:opacity .35s ease}
+.mob-nav-overlay{position:fixed;inset:0;background:rgba(28,20,10,.97);backdrop-filter:blur(24px);z-index:299;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5rem;opacity:0;pointer-events:none;transition:opacity .35s ease}
 .mob-nav-overlay.open{opacity:1;pointer-events:all}
-.mob-nav-overlay a{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(28px,6vw,42px);font-weight:300;color:#28282E;text-decoration:none;transition:color .3s}
+.mob-nav-overlay a{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(28px,6vw,42px);font-weight:300;color:rgba(255,248,235,.9);text-decoration:none;transition:color .3s}
 .mob-nav-overlay a:hover{color:#C4A068}
-.mob-nav-overlay .mob-cta{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.22em;text-transform:uppercase;padding:.85rem 2.5rem;border:1px solid rgba(196,160,104,.6);color:#9A7040;margin-top:1rem}
+.mob-nav-overlay .mob-cta{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.22em;text-transform:uppercase;padding:.85rem 2.5rem;border:1px solid rgba(196,160,104,.6);color:#DEC898;margin-top:1rem}
 @media(max-width:900px){.mob-menu-btn{display:flex !important}.nav-links{display:none !important}.nav-cta{display:none !important}.nav-lang{display:none !important}}
+
+/* ── PAGE COMMON ── */
 .page-section{max-width:1440px;margin:0 auto;padding:4rem 4rem 8rem}
 .page-title-block{padding:11rem 0 3rem;border-bottom:1px solid rgba(196,160,104,.3);margin-bottom:5rem}
 .page-title-block .lbl{color:#C4A068}
 .page-title-block .lbl::before{background:#C4A068}
 .page-title-block .sh{color:#28282E}
 .page-title-block .sh em{color:#9A7040}
-.filter-bar{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;background:rgba(255,255,255,.55);backdrop-filter:blur(12px);border:1px solid rgba(196,160,104,.22);padding:2rem 2.5rem;margin-bottom:4rem}
-.filter-group{display:flex;flex-direction:column;gap:.45rem;flex:1;min-width:160px}
-.filter-group label{font-size:8px;font-weight:400;letter-spacing:.28em;text-transform:uppercase;color:#C4A068}
-.filter-group select,.filter-group input[type="date"]{font-family:'Jost',sans-serif;font-size:12px;font-weight:300;color:#28282E;background:transparent;border:none;border-bottom:1px solid rgba(196,160,104,.4);padding:.55rem 0;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none;width:100%;transition:border-color .3s}
+
+/* ── FILTER BAR (büyütülmüş) ── */
+.filter-bar{display:flex;flex-wrap:wrap;gap:1.2rem;align-items:flex-end;background:rgba(255,255,255,.6);backdrop-filter:blur(12px);border:1px solid rgba(196,160,104,.28);padding:2.4rem 3rem;margin-bottom:4rem;border-radius:2px}
+.filter-group{display:flex;flex-direction:column;gap:.55rem;flex:1;min-width:180px}
+.filter-group label{font-size:9px;font-weight:400;letter-spacing:.28em;text-transform:uppercase;color:#C4A068}
+.filter-group select,.filter-group input[type="date"]{font-family:'Jost',sans-serif;font-size:14px;font-weight:300;color:#28282E;background:transparent;border:none;border-bottom:1.5px solid rgba(196,160,104,.5);padding:.7rem 0;outline:none;cursor:pointer !important;-webkit-appearance:none;appearance:none;width:100%;transition:border-color .3s}
 .filter-group select option{background:#EDE8DC;color:#28282E}
 .filter-group select:focus,.filter-group input:focus{border-color:#C4A068}
-.filter-btn{font-family:'Jost',sans-serif;font-size:9px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;padding:.9rem 2.5rem;background:#C4A068;color:#fff;border:none;cursor:pointer;transition:background .3s;align-self:flex-end;white-space:nowrap}
+.filter-btn{font-family:'Jost',sans-serif;font-size:10px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;padding:1.1rem 3rem;background:#C4A068;color:#fff;border:none;cursor:pointer !important;transition:background .3s;align-self:flex-end;white-space:nowrap;border-radius:1px}
 .filter-btn:hover{background:#9A7040}
+
+/* ── TOUR GRID ── */
 .tour-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:4rem}
-.ec{cursor:pointer;overflow:hidden}
+.ec{cursor:pointer !important;overflow:hidden}
 .eci{aspect-ratio:3/4;position:relative;overflow:hidden}
 .ecb{position:absolute;inset:0;transition:transform .9s cubic-bezier(.25,.46,.45,.94)}
 .ec:hover .ecb{transform:scale(1.08)}
@@ -151,11 +213,15 @@ body{background:linear-gradient(160deg,#EDE8DC 0%,#E8E0D0 30%,#E4D8C8 60%,#EDE4D
 .bg-s{background:linear-gradient(155deg,#708858 0%,#506840 45%,#304820 100%)}
 .bg-c{background:linear-gradient(155deg,#A07858 0%,#785838 45%,#503818 100%)}
 .bg-p{background:linear-gradient(155deg,#806898 0%,#604878 45%,#402858 100%)}
-.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:7rem;align-items:start}
-.about-img{width:100%;aspect-ratio:3/4;object-fit:cover}
+
+/* ── ABOUT (hakkimizda) ── */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:7rem;align-items:center}
+.about-img{width:100%;max-height:100%;object-fit:cover;align-self:center}
 .about-text{max-width:620px}
-.about-text p{font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;font-style:italic;line-height:2.1;color:#505060;margin-bottom:2rem}
-.about-text p:first-child{font-size:21px;color:#28282E;font-style:normal}
+.about-text p{font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-style:italic;line-height:2.1;color:#3a3a46;margin-bottom:2rem}
+.about-text p:first-child{font-size:24px;color:#1a1a20;font-style:normal}
+
+/* ── CONTACT ── */
 .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:8rem;padding-top:2rem}
 .contact-info-col h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(28px,3vw,44px);font-weight:300;color:#28282E;margin-bottom:3rem;line-height:1.2}
 .contact-info-col h3 em{font-style:italic;color:#9A7040}
@@ -173,17 +239,58 @@ body{background:linear-gradient(160deg,#EDE8DC 0%,#E8E0D0 30%,#E4D8C8 60%,#EDE4D
 .form-group input::placeholder,.form-group textarea::placeholder{color:rgba(40,40,46,.35)}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#C4A068}
 .form-group textarea{min-height:110px;background:rgba(255,255,255,.4);padding:.8rem;border:1px solid rgba(196,160,104,.2)}
-.submit-btn{font-family:'Jost',sans-serif;font-size:9px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;padding:1rem 3rem;background:transparent;color:#28282E;border:1px solid rgba(40,40,46,.4);cursor:pointer;display:inline-flex;align-items:center;gap:1rem;position:relative;overflow:hidden;transition:color .4s;margin-top:.5rem}
+.submit-btn{font-family:'Jost',sans-serif;font-size:9px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;padding:1rem 3rem;background:transparent;color:#28282E;border:1px solid rgba(40,40,46,.4);cursor:pointer !important;display:inline-flex;align-items:center;gap:1rem;position:relative;overflow:hidden;transition:color .4s;margin-top:.5rem}
 .submit-btn::before{content:'';position:absolute;inset:0;background:#28282E;transform:translateX(-100%);transition:transform .45s cubic-bezier(.25,.46,.45,.94)}
 .submit-btn span{position:relative;z-index:1}
 .submit-btn:hover{color:#fff}
 .submit-btn:hover::before{transform:translateX(0)}
 .cta-center{text-align:center;padding:2rem 0 4rem}
-.btn-e{font-size:9px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;padding:.9rem 2.25rem;border:1px solid rgba(40,40,46,.4);color:#28282E;background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:1rem;position:relative;overflow:hidden;transition:color .4s;text-decoration:none}
+.btn-e{font-size:9px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;padding:.9rem 2.25rem;border:1px solid rgba(40,40,46,.4);color:#28282E;background:transparent;cursor:pointer !important;display:inline-flex;align-items:center;gap:1rem;position:relative;overflow:hidden;transition:color .4s;text-decoration:none}
 .btn-e::before{content:'';position:absolute;inset:0;background:#28282E;transform:translateX(-100%);transition:transform .45s cubic-bezier(.25,.46,.45,.94)}
 .btn-e span,.btn-e svg{position:relative;z-index:1}
 .btn-e:hover{color:#fff}
 .btn-e:hover::before{transform:translateX(0)}
+
+/* ── PAGE-SPECIFIC BACKGROUNDS ── */
+body.page-butik{background:#C8933A !important}
+body.page-butik .page-title-block .sh,
+body.page-butik .page-title-block .lbl,
+body.page-butik .ect,
+body.page-butik .ecs,
+body.page-butik .ecn{color:#fff !important}
+body.page-butik .page-title-block{border-bottom-color:rgba(255,255,255,.3) !important}
+
+body.page-rotalar{background:#B8CDB0 !important}
+body.page-rotalar .page-title-block .sh,
+body.page-rotalar .page-title-block .lbl{color:#1a3a15 !important}
+body.page-rotalar .page-title-block{border-bottom-color:rgba(26,58,21,.25) !important}
+body.page-rotalar .filter-bar{background:rgba(255,255,255,.45) !important;border-color:rgba(26,58,21,.2) !important}
+body.page-rotalar .filter-group label{color:#3a6b35 !important}
+body.page-rotalar .filter-group select,
+body.page-rotalar .filter-group input[type="date"]{border-bottom-color:rgba(26,58,21,.4) !important;color:#1a3a15 !important}
+body.page-rotalar .filter-btn{background:#3a6b35 !important}
+body.page-rotalar .filter-btn:hover{background:#1a3a15 !important}
+
+body.page-iletisim{background:#D4A8A0 !important}
+body.page-iletisim .page-title-block .sh,
+body.page-iletisim .contact-info-col h3,
+body.page-iletisim .contact-form-col h3{color:#3a1410 !important}
+body.page-iletisim .page-title-block .sh em,
+body.page-iletisim .contact-info-col h3 em{color:#8B2014 !important}
+body.page-iletisim .page-title-block{border-bottom-color:rgba(139,32,20,.25) !important}
+body.page-iletisim .ci-label,
+body.page-iletisim .ci-label::before,
+body.page-iletisim .form-group label{color:#8B2014 !important;background:#8B2014 !important}
+body.page-iletisim .ci-label::before{background:#8B2014 !important}
+body.page-iletisim .ci-value,
+body.page-iletisim .form-group input,
+body.page-iletisim .form-group select,
+body.page-iletisim .form-group textarea{color:#3a1410 !important;border-bottom-color:rgba(139,32,20,.3) !important}
+body.page-iletisim .submit-btn{color:#3a1410 !important;border-color:rgba(58,20,16,.4) !important}
+body.page-iletisim .submit-btn::before{background:#3a1410 !important}
+body.page-iletisim .submit-btn:hover{color:#fff !important}
+
+/* ── RESPONSIVE ── */
 @media(max-width:768px){.tour-grid{grid-template-columns:1fr 1fr}.contact-grid{grid-template-columns:1fr;gap:3rem}.about-grid{grid-template-columns:1fr;gap:3rem}.filter-bar{flex-direction:column}.page-section{padding:2rem 1.5rem 5rem}.page-title-block{padding:8rem 0 2rem}.form-row{grid-template-columns:1fr}}
 @media(max-width:480px){.tour-grid{grid-template-columns:1fr}}
 </style>
@@ -211,7 +318,8 @@ MOB_JS="""
 """
 def inject_mob(nav):
     return nav.replace('<div class="nav-r">', '<div class="nav-r"><button class="mob-menu-btn" id="mobMenuBtn" aria-label="Menü"><span></span><span></span><span></span></button>')
-def page_template(head, nav, footer, body, title="Sundora Travel"):
+def page_template(head, nav, footer, body, title="Sundora Travel", body_class=""):
+    body_attr = f' class="{body_class}"' if body_class else ''
     return f"""<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -219,7 +327,7 @@ def page_template(head, nav, footer, body, title="Sundora Travel"):
 <title>{title} — travel &amp; beyond</title>
 {PAGE_STYLES}
 </head>
-<body>
+<body{body_attr}>
 {MOB_HTML}
 {inject_mob(nav)}
 {body}
@@ -246,7 +354,7 @@ def make_rotalar(head,nav,footer):
   <div class="tour-grid">{c}</div>
   <div class="cta-center"><a href="/butik-grup-turlari.html" class="btn-e"><span>Tüm Popüler Programlar</span><svg viewBox="0 0 16 16" width="12" height="12" stroke="currentColor" fill="none" stroke-width="1.5"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></a></div>
 </div></main>"""
-    return page_template(head,nav,footer,body,"Rotalar | Sundora Travel")
+    return page_template(head,nav,footer,body,"Rotalar | Sundora Travel", body_class="page-rotalar")
 def make_hakkimizda(head,nav,footer):
     body="""
 <main><div class="page-section">
@@ -300,7 +408,7 @@ def make_seyahatini_planla(head,nav,footer):
 def make_butik(head,nav,footer):
     c=build_tour_cards()
     body=f"""<main><div class="page-section"><div class="page-title-block"><div class="lbl">Özenle Seçilmiş</div><h1 class="sh">Butik Grup <em>Turları</em></h1></div><div class="tour-grid">{c}</div></div></main>"""
-    return page_template(head,nav,footer,body,"Butik Grup Turları | Sundora Travel")
+    return page_template(head,nav,footer,body,"Butik Grup Turları | Sundora Travel", body_class="page-butik")
 def make_kisiye(head,nav,footer):
     c=build_tour_cards()
     body=f"""<main><div class="page-section"><div class="page-title-block"><div class="lbl">Sadece Sizin İçin</div><h1 class="sh">Kişiye Özel <em>Seyahatler</em></h1></div><div class="tour-grid">{c}</div></div></main>"""
@@ -315,7 +423,8 @@ def make_iletisim(head,nav,footer):
       <div class="ci-block"><div class="ci-label">Adres</div><div class="ci-value">—</div></div>
       <div class="ci-block"><div class="ci-label">Telefon</div><div class="ci-value">—</div></div>
       <div class="ci-block"><div class="ci-label">E-Posta</div><div class="ci-value">support@sundoratravel.com</div></div>
-      <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:#9A7040;text-decoration:none">@sundoratravel</a></div></div>
+      <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:#8B2014;text-decoration:none">@sundoratravel</a></div></div>
+      <div class="ci-block"><div class="ci-label">TikTok</div><div class="ci-value"><a href="https://tiktok.com/@sundoratravel" target="_blank" style="color:#8B2014;text-decoration:none">@sundoratravel</a></div></div>
     </div>
     <div class="contact-form-col">
       <h3>Mesaj Gönderin</h3>
@@ -326,29 +435,31 @@ def make_iletisim(head,nav,footer):
     </div>
   </div>
 </div></main>"""
-    return page_template(head,nav,footer,body,"İletişim | Sundora Travel")
+    return page_template(head,nav,footer,body,"İletişim | Sundora Travel", body_class="page-iletisim")
 def main():
-    print("\n🌍  Sundora Travel — Sayfa Üretici v4 (GERÇEK) Başlatıldı\n")
+    print("\n🌍  Sundora Travel — Sayfa Üretici v5 Başlatıldı\n")
     if not os.path.exists(PUBLIC_DIR):
         print("HATA: public/ klasörü bulunamadı."); return
     print(f"📖  {INDEX_PATH} okunuyor...")
     html = read_index()
-    print("✂️   Cursor kaldırılıyor..."); html = remove_cursor(html)
-    print("🎨  Nav arka planı güncelleniyor..."); html = update_nav_style(html)
-    print("🦶  Footer güncelleniyor..."); html = update_footer(html)
-    print("🖼️   Hero görseli güncelleniyor..."); html = update_hero_image(html)
+    print("✂️   Cursor kaldırılıyor...");         html = remove_cursor(html)
+    print("🖼️   Hero boşluğu düzeltiliyor...");   html = fix_hero_gap(html)
+    print("🎨  Nav arka planı güncelleniyor...");  html = update_nav_style(html)
+    print("🦶  Footer güncelleniyor...");          html = update_footer(html)
+    print("📸  Hero görseli güncelleniyor...");    html = update_hero_image(html)
     print("🗑️   Gereksiz bölümler kaldırılıyor..."); html = remove_sections(html)
     print("🃏  Deneyim kartları güncelleniyor..."); html = update_exp_cards(html)
-    print("✏️   Nav & hero butonları güncelleniyor..."); html = build_new_nav(html); html = update_hero_btns(html)
+    print("✏️   Metin/link güncelleniyor...");     html = update_exp_section_text(html)
+    print("🔗  Nav & hero butonları güncelleniyor..."); html = build_new_nav(html); html = update_hero_btns(html)
     write_file("index.html", html)
     head=extract_head(html); nav=extract_nav(html); footer=extract_footer(html)
     print("\n📄  Sayfalar oluşturuluyor...")
-    write_file("rotalar.html", make_rotalar(head,nav,footer))
-    write_file("hakkimizda.html", make_hakkimizda(head,nav,footer))
-    write_file("seyahatini-planla.html", make_seyahatini_planla(head,nav,footer))
-    write_file("butik-grup-turlari.html", make_butik(head,nav,footer))
+    write_file("rotalar.html",              make_rotalar(head,nav,footer))
+    write_file("hakkimizda.html",           make_hakkimizda(head,nav,footer))
+    write_file("seyahatini-planla.html",    make_seyahatini_planla(head,nav,footer))
+    write_file("butik-grup-turlari.html",   make_butik(head,nav,footer))
     write_file("kisiye-ozel-seyahatler.html", make_kisiye(head,nav,footer))
-    write_file("iletisim.html", make_iletisim(head,nav,footer))
+    write_file("iletisim.html",             make_iletisim(head,nav,footer))
     print("\n✅  Tüm sayfalar güncellendi!\n")
 if __name__ == "__main__":
     main()
