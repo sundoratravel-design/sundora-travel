@@ -300,14 +300,14 @@ MOB_HTML="""
 """
 MOB_JS="""
 <script>
-(function(){
+document.addEventListener('DOMContentLoaded',function(){
   var btn=document.getElementById('mobMenuBtn');
   var ov=document.getElementById('mobNav');
   if(!btn||!ov)return;
   btn.addEventListener('click',function(e){e.stopPropagation();btn.classList.toggle('open');ov.classList.toggle('open')});
   ov.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){btn.classList.remove('open');ov.classList.remove('open')})});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){btn.classList.remove('open');ov.classList.remove('open')}});
-})();
+});
 </script>
 """
 def inject_mob(nav):
