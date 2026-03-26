@@ -27,13 +27,15 @@ def remove_cursor(html):
     html = re.sub(r'document\.addEventListener\([\'"]mousemove[\'"].*?\}\s*\)', '', html, flags=re.DOTALL)
     return html
 def fix_hero_gap(html):
-    # margin ve padding sıfırla - body ve html için
+    # html,body margin/padding sıfırla
     html = re.sub(r'(html\s*,\s*body\s*\{[^}]*?)margin\s*:\s*[^;]+;', r'\1margin:0;', html)
     html = re.sub(r'(html\s*,\s*body\s*\{[^}]*?)padding\s*:\s*[^;]+;', r'\1padding:0;', html)
-    # .hero veya hero section padding-top kaldır
+    # .hero padding-top kaldır
     html = re.sub(r'(\.hero\s*\{[^}]*?)padding-top\s*:\s*[^;]+;', r'\1padding-top:0;', html)
     # hero-photo üstündeki boşluğu sıfırla
     html = re.sub(r'(\.hero-photo\s*\{)', r'.hero-photo{margin-top:0 !important;display:block;}\n\1', html)
+    # body açılış taginden hemen sonra inline style inject et - en garantili yol
+    html = re.sub(r'(<body[^>]*>)', r'\1\n<style>html,body{margin:0!important;padding:0!important}.hero,.hero-wrap,.hero-section{margin-top:0!important;padding-top:0!important}.hero-photo{margin-top:0!important;display:block!important;vertical-align:top!important}</style>', html)
     return html
 def update_nav_style(html):
     html = re.sub(r'\.nav\.s\{background:rgba\(248,242,234[^}]+\}', '.nav.s{background:rgba(42,32,18,.9);backdrop-filter:blur(20px);padding:.75rem 4rem .75rem 2rem;border-bottom:1px solid rgba(196,160,104,.25)}', html)
@@ -271,24 +273,7 @@ body.page-rotalar .filter-group input[type="date"]{border-bottom-color:rgba(26,5
 body.page-rotalar .filter-btn{background:#3a6b35 !important}
 body.page-rotalar .filter-btn:hover{background:#1a3a15 !important}
 
-body.page-iletisim{background:#D4A8A0 !important}
-body.page-iletisim .page-title-block .sh,
-body.page-iletisim .contact-info-col h3,
-body.page-iletisim .contact-form-col h3{color:#3a1410 !important}
-body.page-iletisim .page-title-block .sh em,
-body.page-iletisim .contact-info-col h3 em{color:#8B2014 !important}
-body.page-iletisim .page-title-block{border-bottom-color:rgba(139,32,20,.25) !important}
-body.page-iletisim .ci-label,
-body.page-iletisim .ci-label::before,
-body.page-iletisim .form-group label{color:#8B2014 !important;background:#8B2014 !important}
-body.page-iletisim .ci-label::before{background:#8B2014 !important}
-body.page-iletisim .ci-value,
-body.page-iletisim .form-group input,
-body.page-iletisim .form-group select,
-body.page-iletisim .form-group textarea{color:#3a1410 !important;border-bottom-color:rgba(139,32,20,.3) !important}
-body.page-iletisim .submit-btn{color:#3a1410 !important;border-color:rgba(58,20,16,.4) !important}
-body.page-iletisim .submit-btn::before{background:#3a1410 !important}
-body.page-iletisim .submit-btn:hover{color:#fff !important}
+body.page-iletisim{background:#EDE5D8 !important}
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){.tour-grid{grid-template-columns:1fr 1fr}.contact-grid{grid-template-columns:1fr;gap:3rem}.about-grid{grid-template-columns:1fr;gap:3rem}.filter-bar{flex-direction:column}.page-section{padding:2rem 1.5rem 5rem}.page-title-block{padding:8rem 0 2rem}.form-row{grid-template-columns:1fr}}
@@ -423,8 +408,8 @@ def make_iletisim(head,nav,footer):
       <div class="ci-block"><div class="ci-label">Adres</div><div class="ci-value">—</div></div>
       <div class="ci-block"><div class="ci-label">Telefon</div><div class="ci-value">—</div></div>
       <div class="ci-block"><div class="ci-label">E-Posta</div><div class="ci-value">support@sundoratravel.com</div></div>
-      <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:#8B2014;text-decoration:none">@sundoratravel</a></div></div>
-      <div class="ci-block"><div class="ci-label">TikTok</div><div class="ci-value"><a href="https://tiktok.com/@sundoratravel" target="_blank" style="color:#8B2014;text-decoration:none">@sundoratravel</a></div></div>
+      <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:#9A7040;text-decoration:none">@sundoratravel</a></div></div>
+      <div class="ci-block"><div class="ci-label">TikTok</div><div class="ci-value"><a href="https://tiktok.com/@sundoratravel" target="_blank" style="color:#9A7040;text-decoration:none">@sundoratravel</a></div></div>
     </div>
     <div class="contact-form-col">
       <h3>Mesaj Gönderin</h3>
