@@ -450,9 +450,10 @@ def main():
     nav_html = extract_nav(html)
     mob_nav_injected = inject_mob(nav_html)
     html = html.replace(nav_html, mob_nav_injected)
-    # Mob overlay'i body'nin hemen başına ekle (her zaman)
-    html = re.sub(r'(<body[^>]*>)', r'\1\n' + MOB_HTML.replace('\\', '\\\\'), html)
-    # Mob JS'i body'nin hemen kapanmadan önce ekle (her zaman)
+    # Mob overlay'i ve JS'i ekle - basit string replace ile
+    body_open = html.find('<body')
+    body_open_end = html.find('>', body_open) + 1
+    html = html[:body_open_end] + '\n' + MOB_HTML + html[body_open_end:]
     html = html.replace('</body>', MOB_JS + '\n</body>')
     write_file("index.html", html)
     head=extract_head(html); nav=extract_nav(html); footer=extract_footer(html)
