@@ -151,26 +151,30 @@ html,body{margin:0;padding:0}
 /* ── HERO GAP FIX ── */
 .hero-photo{margin-top:0 !important;padding-top:0 !important;display:block;vertical-align:top}
 .hero,.hero-wrap,.hero-section{margin-top:0 !important;padding-top:0 !important}
-/* ── CURSOR RESET ── */
+/* ── CURSOR RESET (tüm sayfalarda) ── */
 *{cursor:auto !important}
 a,button,[role=button],[type=button],[type=submit],label,select{cursor:pointer !important}
+/* Anasayfa cursor:none override - orijinal CSS'in üzerine bin */
+html body *{cursor:auto !important}
+html body a,html body button{cursor:pointer !important}
 
-/* ── NAV BAR kalıcı koyu arka plan ── */
+/* ── NAV BAR: anasayfada her zaman koyu, scroll'da daha koyu ── */
 body{background:linear-gradient(160deg,#EDE8DC 0%,#E8E0D0 30%,#E4D8C8 60%,#EDE4D8 100%) !important;min-height:100vh}
-#nav{background:rgba(28,20,10,.82) !important;backdrop-filter:blur(18px) !important;border-bottom:1px solid rgba(196,160,104,.2) !important}
+#nav{background:rgba(28,20,10,.82) !important;backdrop-filter:blur(18px) !important;border-bottom:1px solid rgba(196,160,104,.2) !important;position:fixed !important;top:0;left:0;right:0;z-index:300}
 #nav .nav-links a{color:rgba(255,248,235,.88) !important;font-size:15px}
 #nav .nav-lang{color:rgba(255,248,235,.5) !important}
 #nav .nav-cta{border-color:rgba(222,200,152,.55) !important;color:rgba(222,200,152,.92) !important}
 #nav .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.88 !important}
-#nav.s{background:rgba(28,20,10,.92) !important;backdrop-filter:blur(24px) !important;border-bottom:1px solid rgba(196,160,104,.3) !important}
-#nav.s .nav-links a{color:rgba(255,248,235,.95) !important}
+#nav.s{background:rgba(28,20,10,.95) !important;backdrop-filter:blur(24px) !important;border-bottom:1px solid rgba(196,160,104,.3) !important}
+#nav.s .nav-links a{color:rgba(255,248,235,.98) !important}
 #nav.s .nav-cta{border-color:rgba(222,200,152,.7) !important;color:rgba(222,200,152,.98) !important}
 #nav.s .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.95 !important}
 
 /* ── MOBILE HAMBURGER MENU ── */
 .mob-menu-btn{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer !important;padding:6px;z-index:301;position:relative}
 .mob-menu-btn span{display:block;width:24px;height:1.5px;background:rgba(255,248,235,.9);transition:all .35s;border-radius:2px}
-#nav.s .mob-menu-btn span{background:rgba(255,248,235,.9)}
+#nav .mob-menu-btn span{background:rgba(255,248,235,.9)}
+#nav.s .mob-menu-btn span{background:rgba(255,248,235,.95)}
 .mob-menu-btn.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
 .mob-menu-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
 .mob-menu-btn.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
@@ -257,12 +261,13 @@ body{background:linear-gradient(160deg,#EDE8DC 0%,#E8E0D0 30%,#E4D8C8 60%,#EDE4D
 .btn-e:hover::before{transform:translateX(0)}
 
 /* ── PAGE-SPECIFIC BACKGROUNDS ── */
-body.page-butik{background:#C8933A !important}
+body.page-butik{background:#8FA888 !important}
 body.page-butik .page-title-block .sh,
 body.page-butik .page-title-block .lbl,
 body.page-butik .ect,
 body.page-butik .ecs,
 body.page-butik .ecn{color:#fff !important}
+body.page-butik .page-title-block .sh em{color:#d4edcc !important}
 body.page-butik .page-title-block{border-bottom-color:rgba(255,255,255,.3) !important}
 
 body.page-rotalar{background:#B8CDB0 !important}
@@ -410,7 +415,7 @@ def make_iletisim(head,nav,footer):
       <h3>Birlikte <em>harika</em><br>şeyler<br>tasarlayalım.</h3>
       <div class="ci-block"><div class="ci-label">Adres</div><div class="ci-value">—</div></div>
       <div class="ci-block"><div class="ci-label">Telefon</div><div class="ci-value">—</div></div>
-      <div class="ci-block"><div class="ci-label">E-Posta</div><div class="ci-value">support@sundoratravel.com</div></div>
+      <div class="ci-block"><div class="ci-label">E-Posta</div><div class="ci-value"><a href="mailto:support@sundoratravel.com" style="color:#9A7040;text-decoration:none">support@sundoratravel.com</a></div></div>
       <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:#9A7040;text-decoration:none">@sundoratravel</a></div></div>
       <div class="ci-block"><div class="ci-label">TikTok</div><div class="ci-value"><a href="https://tiktok.com/@sundoratravel" target="_blank" style="color:#9A7040;text-decoration:none">@sundoratravel</a></div></div>
     </div>
@@ -439,6 +444,15 @@ def main():
     print("🃏  Deneyim kartları güncelleniyor..."); html = update_exp_cards(html)
     print("✏️   Metin/link güncelleniyor...");     html = update_exp_section_text(html)
     print("🔗  Nav & hero butonları güncelleniyor..."); html = build_new_nav(html); html = update_hero_btns(html)
+    # Anasayfaya hamburger menü ve sayfa stillerini ekle
+    html = html.replace('</head>', PAGE_STYLES + '</head>')
+    nav_html = extract_nav(html)
+    mob_nav_injected = inject_mob(nav_html)
+    html = html.replace(nav_html, mob_nav_injected)
+    if 'mob-nav-overlay' not in html:
+        html = html.replace('<nav', MOB_HTML + '<nav', 1)
+    if 'mobMenuBtn' not in html or MOB_JS.strip() not in html:
+        html = html.replace('</body>', MOB_JS + '</body>')
     write_file("index.html", html)
     head=extract_head(html); nav=extract_nav(html); footer=extract_footer(html)
     print("\n📄  Sayfalar oluşturuluyor...")
