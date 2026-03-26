@@ -25,9 +25,10 @@ def remove_cursor(html):
     html = re.sub(r'\.cur-ring\s*\{[^}]*\}', '', html)
     # mousemove ile ilgili cursor kodlarını kaldır
     html = re.sub(r'document\.addEventListener\([\'"]mousemove[\'"].*?\}\s*\)', '', html, flags=re.DOTALL)
-    # Garantili fallback: CSS ile gizle VE JS ile DOM'dan sil
+    # Cursor JS script bloğunu kaldır
+    html = re.sub(r'<script[^>]*>[\s\S]*?const cur=document\.getElementById[\s\S]*?</script>', '', html)
+    # Garantili fallback: CSS ile gizle
     html = html.replace('</head>', '<style>#cur,#curRing,.cur,.cur-ring{display:none!important;width:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important}</style></head>')
-    html = html.replace('</body>', '<script>(function(){var els=["cur","curRing"];els.forEach(function(id){var el=document.getElementById(id);if(el)el.parentNode.removeChild(el)});})();</script></body>')
     return html
 def fix_hero_gap(html):
     # html,body margin/padding sıfırla
@@ -444,17 +445,21 @@ def main():
     print("🃏  Deneyim kartları güncelleniyor..."); html = update_exp_cards(html)
     print("✏️   Metin/link güncelleniyor...");     html = update_exp_section_text(html)
     print("🔗  Nav & hero butonları güncelleniyor..."); html = build_new_nav(html); html = update_hero_btns(html)
-    # Anasayfaya sayfa stillerini ekle
-    html = html.replace('</head>', PAGE_STYLES + '</head>')
+    # Anasayfaya sayfa stillerini ekle (sadece 1 kez)
+    if 'mob-menu-btn' not in html:
+        html = html.replace('</head>', PAGE_STYLES + '</head>')
     # Hamburger butonunu nav-r'ye ekle
     nav_html = extract_nav(html)
     mob_nav_injected = inject_mob(nav_html)
     html = html.replace(nav_html, mob_nav_injected)
-    # Mob overlay'i ve JS'i ekle - basit string replace ile
-    body_open = html.find('<body')
-    body_open_end = html.find('>', body_open) + 1
-    html = html[:body_open_end] + '\n' + MOB_HTML + html[body_open_end:]
-    html = html.replace('</body>', MOB_JS + '\n</body>')
+    # Mob overlay'i body'nin hemen başına ekle (sadece 1 kez)
+    if 'id="mobNav"' not in html:
+        body_open = html.find('<body')
+        body_open_end = html.find('>', body_open) + 1
+        html = html[:body_open_end] + '\n' + MOB_HTML + html[body_open_end:]
+    # Mob JS'i string'in en sonuna ekle (</body> replace yerine - çakışma olmasın)
+    if "btn.addEventListener('click'" not in html:
+        html = html.rstrip() + '\n' + MOB_JS + '\n'
     write_file("index.html", html)
     head=extract_head(html); nav=extract_nav(html); footer=extract_footer(html)
     print("\n📄  Sayfalar oluşturuluyor...")
