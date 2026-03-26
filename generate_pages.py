@@ -25,8 +25,9 @@ def remove_cursor(html):
     html = re.sub(r'\.cur-ring\s*\{[^}]*\}', '', html)
     # mousemove ile ilgili cursor kodlarını kaldır
     html = re.sub(r'document\.addEventListener\([\'"]mousemove[\'"].*?\}\s*\)', '', html, flags=re.DOTALL)
-    # Garantili fallback: regex yakalayamadıysa CSS ile gizle (34px yükseklik sorununun kaynağı)
+    # Garantili fallback: CSS ile gizle VE JS ile DOM'dan sil
     html = html.replace('</head>', '<style>#cur,#curRing,.cur,.cur-ring{display:none!important;width:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important}</style></head>')
+    html = html.replace('</body>', '<script>(function(){var els=["cur","curRing"];els.forEach(function(id){var el=document.getElementById(id);if(el)el.parentNode.removeChild(el)});})();</script></body>')
     return html
 def fix_hero_gap(html):
     # html,body margin/padding sıfırla
