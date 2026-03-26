@@ -444,15 +444,16 @@ def main():
     print("🃏  Deneyim kartları güncelleniyor..."); html = update_exp_cards(html)
     print("✏️   Metin/link güncelleniyor...");     html = update_exp_section_text(html)
     print("🔗  Nav & hero butonları güncelleniyor..."); html = build_new_nav(html); html = update_hero_btns(html)
-    # Anasayfaya hamburger menü ve sayfa stillerini ekle
+    # Anasayfaya sayfa stillerini ekle
     html = html.replace('</head>', PAGE_STYLES + '</head>')
+    # Hamburger butonunu nav-r'ye ekle
     nav_html = extract_nav(html)
     mob_nav_injected = inject_mob(nav_html)
     html = html.replace(nav_html, mob_nav_injected)
-    if 'mob-nav-overlay' not in html:
-        html = html.replace('<nav', MOB_HTML + '<nav', 1)
-    if 'mobMenuBtn' not in html or MOB_JS.strip() not in html:
-        html = html.replace('</body>', MOB_JS + '</body>')
+    # Mob overlay'i body'nin hemen başına ekle (her zaman)
+    html = re.sub(r'(<body[^>]*>)', r'\1\n' + MOB_HTML.replace('\\', '\\\\'), html)
+    # Mob JS'i body'nin hemen kapanmadan önce ekle (her zaman)
+    html = html.replace('</body>', MOB_JS + '\n</body>')
     write_file("index.html", html)
     head=extract_head(html); nav=extract_nav(html); footer=extract_footer(html)
     print("\n📄  Sayfalar oluşturuluyor...")
