@@ -28,32 +28,51 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 
 <script>
+/* ── VİDEO HERO: cross-fade döngüsü ── */
 (function(){
-  var INTERVAL=6000;
-  var vids=document.querySelectorAll('.sd-vid');
-  var dots=document.querySelectorAll('.sd-dot');
-  if(!vids.length)return;
-  var current=0;
+  var INTERVAL = 6000; // her video kaç ms oynasın
+  var vids = document.querySelectorAll('.sd-vid');
+  var dots = document.querySelectorAll('.sd-dot');
+  if(!vids.length) return;
+  var current = 0;
   function goTo(idx){
     vids[current].classList.remove('sd-vid-active');
-    dots[current]&&dots[current].classList.remove('sd-dot-active');
-    current=idx%vids.length;
+    dots[current] && dots[current].classList.remove('sd-dot-active');
+    current = idx % vids.length;
     vids[current].classList.add('sd-vid-active');
-    dots[current]&&dots[current].classList.add('sd-dot-active');
+    dots[current] && dots[current].classList.add('sd-dot-active');
   }
-  var timer=setInterval(function(){goTo(current+1);},INTERVAL);
-  dots.forEach(function(d,i){d.addEventListener('click',function(){clearInterval(timer);goTo(i);timer=setInterval(function(){goTo(current+1);},INTERVAL);});});
+  var timer = setInterval(function(){ goTo(current+1); }, INTERVAL);
+  dots.forEach(function(d,i){
+    d.addEventListener('click',function(){
+      clearInterval(timer);
+      goTo(i);
+      timer = setInterval(function(){ goTo(current+1); }, INTERVAL);
+    });
+  });
+  /* Sayfa geçiş efekti: linklere tıklandığında fade-out */
   document.querySelectorAll('a[href]').forEach(function(a){
-    var href=a.getAttribute('href');
-    if(!href||href.startsWith('#')||href.startsWith('mailto')||href.startsWith('http'))return;
-    a.addEventListener('click',function(e){e.preventDefault();document.body.style.transition='opacity .45s';document.body.style.opacity='0';setTimeout(function(){window.location.href=href;},420);});
+    var href = a.getAttribute('href');
+    if(!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('http')) return;
+    a.addEventListener('click',function(e){
+      e.preventDefault();
+      document.body.style.transition='opacity .45s';
+      document.body.style.opacity='0';
+      setTimeout(function(){ window.location.href=href; },420);
+    });
   });
 })();
+
+/* ── SCROLL REVEAL ── */
 (function(){
-  var els=document.querySelectorAll('.sd-reveal');
-  if(!els.length)return;
-  var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('sd-visible');io.unobserve(e.target);}});},{threshold:0.12,rootMargin:'0px 0px -40px 0px'});
-  els.forEach(function(el){io.observe(el);});
+  var els = document.querySelectorAll('.sd-reveal');
+  if(!els.length) return;
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('sd-visible'); io.unobserve(e.target); }
+    });
+  },{threshold:0.12,rootMargin:'0px 0px -40px 0px'});
+  els.forEach(function(el){ io.observe(el); });
 })();
 </script>
 
