@@ -7,116 +7,27 @@
 <style>
 /* ── RESET ── */
 html,body{margin:0;padding:0}
-/* ── CURSOR RESET ── */
+/* ── HERO GAP FIX ── */
+.hero-photo{margin-top:0 !important;padding-top:0 !important;display:block;vertical-align:top}
+.hero,.hero-wrap,.hero-section{margin-top:0 !important;padding-top:0 !important}
+/* ── CURSOR RESET (tüm sayfalarda) ── */
 *{cursor:auto !important}
 a,button,[role=button],[type=button],[type=submit],label,select{cursor:pointer !important}
+/* Anasayfa cursor:none override - orijinal CSS'in üzerine bin */
 html body *{cursor:auto !important}
 html body a,html body button{cursor:pointer !important}
 
-/* ── SAYFA GEÇİŞİ (Scott Dunn fade) ── */
-body{opacity:0;animation:sd-pagein .65s cubic-bezier(.4,0,.2,1) forwards}
-@keyframes sd-pagein{to{opacity:1}}
-
-/* ── GLOBAL BACKGROUND ── */
+/* ── NAV BAR: anasayfada her zaman koyu, scroll'da daha koyu ── */
 body{background:linear-gradient(160deg,#EDE8DC 0%,#E8E0D0 30%,#E4D8C8 60%,#EDE4D8 100%) !important;min-height:100vh}
-
-/* ── NAV: şeffaf başlar, scroll'da koyulaşır ── */
-#nav{
-  background:transparent !important;
-  backdrop-filter:none !important;
-  border-bottom:none !important;
-  position:fixed !important;top:0;left:0;right:0;z-index:300;
-  transition:background .45s ease,backdrop-filter .45s ease,border-color .45s ease;
-}
-#nav .nav-links a{color:rgba(255,248,235,.92) !important;font-size:15px;transition:color .3s}
-#nav .nav-links a:hover{color:#DEC898 !important}
-#nav .nav-lang{color:rgba(255,248,235,.55) !important}
-#nav .nav-cta{border-color:rgba(222,200,152,.6) !important;color:rgba(222,200,152,.95) !important;transition:background .3s,color .3s}
-#nav .nav-cta:hover{background:rgba(222,200,152,.15) !important}
-#nav .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.92 !important}
-
-/* Scroll edilince nav koyulaşır */
-#nav.s{
-  background:rgba(18,12,6,.92) !important;
-  backdrop-filter:blur(24px) !important;
-  border-bottom:1px solid rgba(196,160,104,.22) !important;
-}
-#nav.s .nav-links a{color:rgba(255,248,235,.96) !important}
+#nav{background:rgba(28,20,10,.82) !important;backdrop-filter:blur(18px) !important;border-bottom:1px solid rgba(196,160,104,.2) !important;position:fixed !important;top:0;left:0;right:0;z-index:300}
+#nav .nav-links a{color:rgba(255,248,235,.88) !important;font-size:15px}
+#nav .nav-lang{color:rgba(255,248,235,.5) !important}
+#nav .nav-cta{border-color:rgba(222,200,152,.55) !important;color:rgba(222,200,152,.92) !important}
+#nav .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.88 !important}
+#nav.s{background:rgba(28,20,10,.95) !important;backdrop-filter:blur(24px) !important;border-bottom:1px solid rgba(196,160,104,.3) !important}
+#nav.s .nav-links a{color:rgba(255,248,235,.98) !important}
 #nav.s .nav-cta{border-color:rgba(222,200,152,.7) !important;color:rgba(222,200,152,.98) !important}
 #nav.s .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.95 !important}
-
-/* ── İÇ SAYFALARDA NAV: her zaman koyu (video hero yok) ── */
-body:not(.page-home) #nav{
-  background:rgba(18,12,6,.88) !important;
-  backdrop-filter:blur(20px) !important;
-  border-bottom:1px solid rgba(196,160,104,.2) !important;
-}
-
-/* ── VİDEO HERO (Scott Dunn klonu) ── */
-.sd-video-hero{
-  position:relative;
-  width:100%;
-  height:100vh;
-  min-height:600px;
-  overflow:hidden;
-  background:#0a0806;
-}
-.sd-vid{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  opacity:0;
-  transition:opacity 1.6s cubic-bezier(.4,0,.2,1);
-  z-index:1;
-}
-.sd-vid.sd-vid-active{opacity:1;z-index:2}
-.sd-vid-overlay{
-  position:absolute;
-  inset:0;
-  background:linear-gradient(
-    to bottom,
-    rgba(0,0,0,.28) 0%,
-    rgba(0,0,0,.08) 40%,
-    rgba(0,0,0,.45) 100%
-  );
-  z-index:3;
-}
-/* Video hero üzerindeki mevcut içerikler (hero metin, butonlar) doğru katmanda kalır */
-.sd-video-hero ~ * .hero-content,
-.hero-content{position:relative;z-index:4}
-
-/* Hero içindeki butonlar video üstünde görünsün */
-.sd-video-hero .btn-h,
-.sd-video-hero .btn-hg{position:relative;z-index:5}
-
-/* Video nokta göstergeleri */
-.sd-vid-dots{
-  position:absolute;
-  bottom:2.2rem;
-  left:50%;
-  transform:translateX(-50%);
-  display:flex;
-  gap:.6rem;
-  z-index:6;
-}
-.sd-dot{
-  width:28px;height:2px;
-  background:rgba(255,255,255,.35);
-  border-radius:2px;
-  cursor:pointer !important;
-  transition:background .4s,width .4s;
-}
-.sd-dot.sd-dot-active{background:rgba(255,255,255,.9);width:44px}
-
-/* ── SCROLL REVEAL (fade-in + slide-up) ── */
-.sd-reveal{
-  opacity:0;
-  transform:translateY(32px);
-  transition:opacity .75s cubic-bezier(.4,0,.2,1),transform .75s cubic-bezier(.4,0,.2,1);
-}
-.sd-reveal.sd-visible{opacity:1;transform:translateY(0)}
 
 /* ── MOBILE HAMBURGER MENU ── */
 .mob-menu-btn{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer !important;padding:6px;z-index:301;position:relative}
@@ -126,40 +37,12 @@ body:not(.page-home) #nav{
 .mob-menu-btn.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
 .mob-menu-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
 .mob-menu-btn.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
-.mob-nav-overlay{
-  position:fixed;inset:0;
-  background:rgba(12,8,4,.97);
-  backdrop-filter:blur(28px);
-  z-index:299;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.8rem;
-  opacity:0;pointer-events:none;
-  transition:opacity .4s cubic-bezier(.4,0,.2,1);
-}
+.mob-nav-overlay{position:fixed;inset:0;background:rgba(28,20,10,.97);backdrop-filter:blur(24px);z-index:299;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5rem;opacity:0;pointer-events:none;transition:opacity .35s ease}
 .mob-nav-overlay.open{opacity:1;pointer-events:all}
-.mob-nav-overlay a{
-  font-family:'Cormorant Garamond',Georgia,serif;
-  font-size:clamp(30px,6vw,46px);
-  font-weight:300;
-  color:rgba(255,248,235,.88);
-  text-decoration:none;
-  letter-spacing:.04em;
-  transition:color .3s,letter-spacing .3s;
-}
-.mob-nav-overlay a:hover{color:#C4A068;letter-spacing:.08em}
-.mob-nav-overlay .mob-cta{
-  font-family:'Jost',sans-serif;
-  font-size:10px;font-weight:300;
-  letter-spacing:.24em;text-transform:uppercase;
-  padding:.9rem 2.8rem;
-  border:1px solid rgba(196,160,104,.55);
-  color:#DEC898;margin-top:1.2rem;
-}
-@media(max-width:900px){
-  .mob-menu-btn{display:flex !important}
-  .nav-links{display:none !important}
-  .nav-cta{display:none !important}
-  .nav-lang{display:none !important}
-}
+.mob-nav-overlay a{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(28px,6vw,42px);font-weight:300;color:rgba(255,248,235,.9);text-decoration:none;transition:color .3s}
+.mob-nav-overlay a:hover{color:#C4A068}
+.mob-nav-overlay .mob-cta{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.22em;text-transform:uppercase;padding:.85rem 2.5rem;border:1px solid rgba(196,160,104,.6);color:#DEC898;margin-top:1rem}
+@media(max-width:900px){.mob-menu-btn{display:flex !important}.nav-links{display:none !important}.nav-cta{display:none !important}.nav-lang{display:none !important}}
 
 /* ── PAGE COMMON ── */
 .page-section{max-width:1440px;margin:0 auto;padding:4rem 4rem 8rem}
@@ -169,7 +52,7 @@ body:not(.page-home) #nav{
 .page-title-block .sh{color:#28282E}
 .page-title-block .sh em{color:#9A7040}
 
-/* ── FILTER BAR ── */
+/* ── FILTER BAR (büyütülmüş) ── */
 .filter-bar{display:flex;flex-wrap:wrap;gap:1.2rem;align-items:flex-end;background:rgba(255,255,255,.6);backdrop-filter:blur(12px);border:1px solid rgba(196,160,104,.28);padding:2.4rem 3rem;margin-bottom:4rem;border-radius:2px}
 .filter-group{display:flex;flex-direction:column;gap:.55rem;flex:1;min-width:180px}
 .filter-group label{font-size:9px;font-weight:400;letter-spacing:.28em;text-transform:uppercase;color:#C4A068}
@@ -199,7 +82,7 @@ body:not(.page-home) #nav{
 .bg-c{background:linear-gradient(155deg,#A07858 0%,#785838 45%,#503818 100%)}
 .bg-p{background:linear-gradient(155deg,#806898 0%,#604878 45%,#402858 100%)}
 
-/* ── ABOUT ── */
+/* ── ABOUT (hakkimizda) ── */
 .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:7rem;align-items:center}
 .about-img{width:100%;max-height:100%;object-fit:cover;align-self:center}
 .about-text{max-width:620px}
@@ -260,16 +143,7 @@ body.page-rotalar .filter-btn:hover{background:#1a3a15 !important}
 body.page-iletisim{background:#EDE5D8 !important}
 
 /* ── RESPONSIVE ── */
-@media(max-width:768px){
-  .tour-grid{grid-template-columns:1fr 1fr}
-  .contact-grid{grid-template-columns:1fr;gap:3rem}
-  .about-grid{grid-template-columns:1fr;gap:3rem}
-  .filter-bar{flex-direction:column}
-  .page-section{padding:2rem 1.5rem 5rem}
-  .page-title-block{padding:8rem 0 2rem}
-  .form-row{grid-template-columns:1fr}
-  .sd-video-hero{height:100svh}
-}
+@media(max-width:768px){.tour-grid{grid-template-columns:1fr 1fr}.contact-grid{grid-template-columns:1fr;gap:3rem}.about-grid{grid-template-columns:1fr;gap:3rem}.filter-bar{flex-direction:column}.page-section{padding:2rem 1.5rem 5rem}.page-title-block{padding:8rem 0 2rem}.form-row{grid-template-columns:1fr}}
 @media(max-width:480px){.tour-grid{grid-template-columns:1fr}}
 </style>
 
@@ -285,19 +159,19 @@ body.page-iletisim{background:#EDE5D8 !important}
 </div>
 
 
-<main><div class="page-section"><div class="page-title-block sd-reveal"><div class="lbl">Özenle Seçilmiş</div><h1 class="sh">Butik Grup <em>Turları</em></h1></div><div class="tour-grid">
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-h"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">01</div><div class="ect">Japonya & Güney Kore</div><div class="ecs">Asya · 12 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-s"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">02</div><div class="ect">İtalya: Toskana Rotası</div><div class="ecs">Avrupa · 9 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-c"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">03</div><div class="ect">Fas: Çöl & Medina</div><div class="ecs">Afrika · 8 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-p"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">04</div><div class="ect">Maldivler Retreat</div><div class="ecs">Tropik Adalar · 7 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-h"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">05</div><div class="ect">Peru & Machu Picchu</div><div class="ecs">Amerika · 11 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-s"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">06</div><div class="ect">Yunanistan Adaları</div><div class="ecs">Avrupa · 10 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-c"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">07</div><div class="ect">Yeni Zelanda</div><div class="ecs">Avustralya · 14 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-p"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">08</div><div class="ect">Ürdün & Petra</div><div class="ecs">Ortadoğu · 7 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-h"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">09</div><div class="ect">İsviçre Alpleri</div><div class="ecs">Kış Bölgeleri · 8 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-s"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">10</div><div class="ect">Tanzania Safari</div><div class="ecs">Safari · 10 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-c"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">11</div><div class="ect">Bali & Komodo</div><div class="ecs">Asya · 12 Gün</div></div></div></div>
-    <div class="ec sd-reveal"><div class="eci"><div class="ecb bg-p"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">12</div><div class="ect">İzlanda Aurora</div><div class="ecs">Kutup Bölgeleri · 6 Gün</div></div></div></div></div></div></main>
+<main><div class="page-section"><div class="page-title-block"><div class="lbl">Özenle Seçilmiş</div><h1 class="sh">Butik Grup <em>Turları</em></h1></div><div class="tour-grid">
+    <div class="ec"><div class="eci"><div class="ecb bg-h"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">01</div><div class="ect">Japonya & Güney Kore</div><div class="ecs">Asya · 12 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-s"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">02</div><div class="ect">İtalya: Toskana Rotası</div><div class="ecs">Avrupa · 9 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-c"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">03</div><div class="ect">Fas: Çöl & Medina</div><div class="ecs">Afrika · 8 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-p"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">04</div><div class="ect">Maldivler Retreat</div><div class="ecs">Tropik Adalar · 7 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-h"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">05</div><div class="ect">Peru & Machu Picchu</div><div class="ecs">Amerika · 11 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-s"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">06</div><div class="ect">Yunanistan Adaları</div><div class="ecs">Avrupa · 10 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-c"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">07</div><div class="ect">Yeni Zelanda</div><div class="ecs">Avustralya · 14 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-p"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">08</div><div class="ect">Ürdün & Petra</div><div class="ecs">Ortadoğu · 7 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-h"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">09</div><div class="ect">İsviçre Alpleri</div><div class="ecs">Kış Bölgeleri · 8 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-s"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">10</div><div class="ect">Tanzania Safari</div><div class="ecs">Safari · 10 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-c"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">11</div><div class="ect">Bali & Komodo</div><div class="ecs">Asya · 12 Gün</div></div></div></div>
+    <div class="ec"><div class="eci"><div class="ecb bg-p"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">12</div><div class="ect">İzlanda Aurora</div><div class="ecs">Kutup Bölgeleri · 6 Gün</div></div></div></div></div></div></main>
 
 <script>
 const nav=document.getElementById('nav');
@@ -313,56 +187,6 @@ document.addEventListener('DOMContentLoaded',function(){
   ov.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){btn.classList.remove('open');ov.classList.remove('open')})});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){btn.classList.remove('open');ov.classList.remove('open')}});
 });
-</script>
-
-
-<script>
-/* ── VİDEO HERO: cross-fade döngüsü ── */
-(function(){
-  var INTERVAL = 6000; // her video kaç ms oynasın
-  var vids = document.querySelectorAll('.sd-vid');
-  var dots = document.querySelectorAll('.sd-dot');
-  if(!vids.length) return;
-  var current = 0;
-  function goTo(idx){
-    vids[current].classList.remove('sd-vid-active');
-    dots[current] && dots[current].classList.remove('sd-dot-active');
-    current = idx % vids.length;
-    vids[current].classList.add('sd-vid-active');
-    dots[current] && dots[current].classList.add('sd-dot-active');
-  }
-  var timer = setInterval(function(){ goTo(current+1); }, INTERVAL);
-  dots.forEach(function(d,i){
-    d.addEventListener('click',function(){
-      clearInterval(timer);
-      goTo(i);
-      timer = setInterval(function(){ goTo(current+1); }, INTERVAL);
-    });
-  });
-  /* Sayfa geçiş efekti: linklere tıklandığında fade-out */
-  document.querySelectorAll('a[href]').forEach(function(a){
-    var href = a.getAttribute('href');
-    if(!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('http')) return;
-    a.addEventListener('click',function(e){
-      e.preventDefault();
-      document.body.style.transition='opacity .45s';
-      document.body.style.opacity='0';
-      setTimeout(function(){ window.location.href=href; },420);
-    });
-  });
-})();
-
-/* ── SCROLL REVEAL ── */
-(function(){
-  var els = document.querySelectorAll('.sd-reveal');
-  if(!els.length) return;
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){
-      if(e.isIntersecting){ e.target.classList.add('sd-visible'); io.unobserve(e.target); }
-    });
-  },{threshold:0.12,rootMargin:'0px 0px -40px 0px'});
-  els.forEach(function(el){ io.observe(el); });
-})();
 </script>
 
 </body>
