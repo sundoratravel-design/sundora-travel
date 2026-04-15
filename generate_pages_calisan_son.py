@@ -10,23 +10,35 @@ def write_file(filename, content):
     with open(path, "w", encoding="utf-8") as f: f.write(content)
     print(f"  ✓ {path} oluşturuldu.")
 def remove_cursor(html):
+    # cursor:none kaldır
     html = re.sub(r'cursor\s*:\s*none\s*;?\s*', '', html)
+    # CSS cursor bloklarını kaldır
     html = re.sub(r'/\* CURSOR \*/.*?\.cur-ring\{[^}]*\}', '', html, flags=re.DOTALL)
+    # cursor div HTML'lerini kaldır
     html = re.sub(r'<div id="cur"[^>]*>.*?</div>', '', html, flags=re.DOTALL)
     html = re.sub(r'<div id="curRing"[^>]*>.*?</div>', '', html, flags=re.DOTALL)
+    # cursor JS event'lerini kaldır
     html = re.sub(r'// CURSOR\s*\nconst cur=.*?anim\}\)\(\);', '', html, flags=re.DOTALL)
+    # Ekstra: herhangi bir #cur veya #curRing CSS bloğunu kaldır
     html = re.sub(r'#cur\s*\{[^}]*\}', '', html)
     html = re.sub(r'#curRing\s*\{[^}]*\}', '', html)
     html = re.sub(r'\.cur-ring\s*\{[^}]*\}', '', html)
+    # mousemove ile ilgili cursor kodlarını kaldır
     html = re.sub(r'document\.addEventListener\([\'"]mousemove[\'"].*?\}\s*\)', '', html, flags=re.DOTALL)
+    # Cursor JS script bloğunu kaldır
     html = re.sub(r'<script[^>]*>[\s\S]*?const cur=document\.getElementById[\s\S]*?</script>', '', html)
+    # Garantili fallback: CSS ile gizle
     html = html.replace('</head>', '<style>#cur,#curRing,.cur,.cur-ring{display:none!important;width:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important}</style></head>')
     return html
 def fix_hero_gap(html):
+    # html,body margin/padding sıfırla
     html = re.sub(r'(html\s*,\s*body\s*\{[^}]*?)margin\s*:\s*[^;]+;', r'\1margin:0;', html)
     html = re.sub(r'(html\s*,\s*body\s*\{[^}]*?)padding\s*:\s*[^;]+;', r'\1padding:0;', html)
+    # .hero padding-top kaldır
     html = re.sub(r'(\.hero\s*\{[^}]*?)padding-top\s*:\s*[^;]+;', r'\1padding-top:0;', html)
+    # hero-photo üstündeki boşluğu sıfırla
     html = re.sub(r'(\.hero-photo\s*\{)', r'.hero-photo{margin-top:0 !important;display:block;}\n\1', html)
+    # body açılış taginden hemen sonra inline style inject et - en garantili yol
     html = re.sub(r'(<body[^>]*>)', r'\1\n<style>html,body{margin:0!important;padding:0!important}.hero,.hero-wrap,.hero-section{margin-top:0!important;padding-top:0!important}.hero-photo{margin-top:0!important;display:block!important;vertical-align:top!important}</style>', html)
     return html
 def update_nav_style(html):
@@ -37,6 +49,8 @@ def update_nav_style(html):
     html = re.sub(r'\.nav\.s \.nav-logo img\{filter:none;opacity:1;height:120px\}', '.nav.s .nav-logo img{filter:brightness(0) invert(1);opacity:.9;height:120px}', html)
     return html
 def inject_nav_bar_bg(html):
+    # Nav-links'e her zaman koyu arka plan (scroll'dan bağımsız kalıcı bar)
+    # nav-links alanına sabit koyu arka plan ekle - inline style injection via CSS
     return html
 def update_footer(html):
     old_soc = '<div class="ft-soc"><a href="https://instagram.com/sundoratravel" target="_blank"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle></svg></a></div>'
@@ -66,19 +80,7 @@ def update_footer(html):
     html = html.replace('.ft-bot{', '.ft-col ul li a{color:rgba(255,255,255,.45);text-decoration:none;transition:color .3s}.ft-col ul li a:hover{color:var(--gold-lt)}.ft-bot{')
     return html
 def update_hero_image(html):
-    # Eski hero-photo img'yi VIDEO HERO ile değiştir
-    # Önce base64 versiyonunu değiştir
-    html = re.sub(
-        r'<img class="hero-photo" src="data:image/jpeg;base64,[^"]*"[^>]*>',
-        VIDEO_HERO_HTML,
-        html
-    )
-    # Sonra statik anasayfa.jpg versiyonunu da değiştir (daha önce çalıştırılmışsa)
-    html = re.sub(
-        r'<img class="hero-photo" src="/anasayfa\.jpg"[^>]*>',
-        VIDEO_HERO_HTML,
-        html
-    )
+    html = re.sub(r'<img class="hero-photo" src="data:image/jpeg;base64,[^"]*"[^>]*>', '<img class="hero-photo" src="/anasayfa.jpg" alt="Sundora Travel">', html)
     return html
 def remove_sections(html):
     html = re.sub(r'<section class="ig-sec">.*?</section>', '', html, flags=re.DOTALL)
@@ -86,12 +88,15 @@ def remove_sections(html):
     html = re.sub(r'<section style="background:linear-gradient[^"]*"[^>]*>\s*<div class="wrap"><div class="intro">.*?</div>\s*</div>\s*</section>', '', html, flags=re.DOTALL)
     return html
 def update_exp_section_text(html):
+    # "Experience Categories" -> "Seyahat Tarzını Seç"
     html = re.sub(r'Experience Categories', 'Seyahat Tarzını Seç', html)
+    # "All Experiences →" -> "Tüm Rotalar →" with correct href
     html = re.sub(
         r'<a[^>]*href=["\'][^"\']*["\'][^>]*>\s*All Experiences\s*→\s*</a>',
         '<a href="/butik-grup-turlari.html" class="exp-more">Tüm Rotalar →</a>',
         html, flags=re.DOTALL
     )
+    # Also try button/span variants
     html = re.sub(r'All Experiences\s*→', 'Tüm Rotalar →', html)
     html = re.sub(
         r'(href=["\'])([^"\']*?)(["\'][^>]*>Tüm Rotalar →)',
@@ -134,155 +139,37 @@ def extract_nav(html):
     m = re.search(r'<nav[^>]*>.*?</nav>', html, re.DOTALL); return m.group(0) if m else ""
 def extract_footer(html):
     m = re.search(r'<footer>.*?</footer>', html, re.DOTALL); return m.group(0) if m else ""
-
-# ── VIDEO HERO HTML ──────────────────────────────────────────────────────────
-VIDEO_HERO_HTML = """<div class="sd-video-hero" id="sdVideoHero">
-  <video class="sd-vid sd-vid-active" autoplay muted loop playsinline preload="auto" data-index="0">
-    <source src="/video1.mp4" type="video/mp4">
-  </video>
-  <video class="sd-vid" autoplay muted loop playsinline preload="auto" data-index="1">
-    <source src="/video2.mp4" type="video/mp4">
-  </video>
-  <video class="sd-vid" autoplay muted loop playsinline preload="auto" data-index="2">
-    <source src="/video3.mp4" type="video/mp4">
-  </video>
-  <video class="sd-vid" autoplay muted loop playsinline preload="auto" data-index="3">
-    <source src="/video4.mp4" type="video/mp4">
-  </video>
-  <video class="sd-vid" autoplay muted loop playsinline preload="auto" data-index="4">
-    <source src="/video5.mp4" type="video/mp4">
-  </video>
-  <div class="sd-vid-overlay"></div>
-  <div class="sd-vid-dots">
-    <span class="sd-dot sd-dot-active" data-i="0"></span>
-    <span class="sd-dot" data-i="1"></span>
-    <span class="sd-dot" data-i="2"></span>
-    <span class="sd-dot" data-i="3"></span>
-    <span class="sd-dot" data-i="4"></span>
-  </div>
-</div>"""
-
 TOUR_CARDS_DATA = [("01","bg-h","Japonya & Güney Kore","Asya","12 Gün"),("02","bg-s","İtalya: Toskana Rotası","Avrupa","9 Gün"),("03","bg-c","Fas: Çöl & Medina","Afrika","8 Gün"),("04","bg-p","Maldivler Retreat","Tropik Adalar","7 Gün"),("05","bg-h","Peru & Machu Picchu","Amerika","11 Gün"),("06","bg-s","Yunanistan Adaları","Avrupa","10 Gün"),("07","bg-c","Yeni Zelanda","Avustralya","14 Gün"),("08","bg-p","Ürdün & Petra","Ortadoğu","7 Gün"),("09","bg-h","İsviçre Alpleri","Kış Bölgeleri","8 Gün"),("10","bg-s","Tanzania Safari","Safari","10 Gün"),("11","bg-c","Bali & Komodo","Asya","12 Gün"),("12","bg-p","İzlanda Aurora","Kutup Bölgeleri","6 Gün")]
 def build_tour_cards():
     h=""
     for num,bg,title,region,duration in TOUR_CARDS_DATA:
-        h+=f'\n    <div class="ec sd-reveal"><div class="eci"><div class="ecb {bg}"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">{num}</div><div class="ect">{title}</div><div class="ecs">{region} · {duration}</div></div></div></div>'
+        h+=f'\n    <div class="ec"><div class="eci"><div class="ecb {bg}"></div><div class="eco"></div><div class="ecarr"><svg viewBox="0 0 16 16"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></div><div class="ecinfo"><div class="ecn">{num}</div><div class="ect">{title}</div><div class="ecs">{region} · {duration}</div></div></div></div>'
     return h
-
 PAGE_STYLES = """
 <style>
 /* ── RESET ── */
 html,body{margin:0;padding:0}
-/* ── CURSOR RESET ── */
+/* ── HERO GAP FIX ── */
+.hero-photo{margin-top:0 !important;padding-top:0 !important;display:block;vertical-align:top}
+.hero,.hero-wrap,.hero-section{margin-top:0 !important;padding-top:0 !important}
+/* ── CURSOR RESET (tüm sayfalarda) ── */
 *{cursor:auto !important}
 a,button,[role=button],[type=button],[type=submit],label,select{cursor:pointer !important}
+/* Anasayfa cursor:none override - orijinal CSS'in üzerine bin */
 html body *{cursor:auto !important}
 html body a,html body button{cursor:pointer !important}
 
-/* ── SAYFA GEÇİŞİ (Scott Dunn fade) ── */
-body{opacity:0;animation:sd-pagein .65s cubic-bezier(.4,0,.2,1) forwards}
-@keyframes sd-pagein{to{opacity:1}}
-
-/* ── GLOBAL BACKGROUND ── */
+/* ── NAV BAR: anasayfada her zaman koyu, scroll'da daha koyu ── */
 body{background:linear-gradient(160deg,#EDE8DC 0%,#E8E0D0 30%,#E4D8C8 60%,#EDE4D8 100%) !important;min-height:100vh}
-
-/* ── NAV: şeffaf başlar, scroll'da koyulaşır ── */
-#nav{
-  background:transparent !important;
-  backdrop-filter:none !important;
-  border-bottom:none !important;
-  position:fixed !important;top:0;left:0;right:0;z-index:300;
-  transition:background .45s ease,backdrop-filter .45s ease,border-color .45s ease;
-}
-#nav .nav-links a{color:rgba(255,248,235,.92) !important;font-size:15px;transition:color .3s}
-#nav .nav-links a:hover{color:#DEC898 !important}
-#nav .nav-lang{color:rgba(255,248,235,.55) !important}
-#nav .nav-cta{border-color:rgba(222,200,152,.6) !important;color:rgba(222,200,152,.95) !important;transition:background .3s,color .3s}
-#nav .nav-cta:hover{background:rgba(222,200,152,.15) !important}
-#nav .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.92 !important}
-
-/* Scroll edilince nav koyulaşır */
-#nav.s{
-  background:rgba(18,12,6,.92) !important;
-  backdrop-filter:blur(24px) !important;
-  border-bottom:1px solid rgba(196,160,104,.22) !important;
-}
-#nav.s .nav-links a{color:rgba(255,248,235,.96) !important}
+#nav{background:rgba(28,20,10,.82) !important;backdrop-filter:blur(18px) !important;border-bottom:1px solid rgba(196,160,104,.2) !important;position:fixed !important;top:0;left:0;right:0;z-index:300}
+#nav .nav-links a{color:rgba(255,248,235,.88) !important;font-size:15px}
+#nav .nav-lang{color:rgba(255,248,235,.5) !important}
+#nav .nav-cta{border-color:rgba(222,200,152,.55) !important;color:rgba(222,200,152,.92) !important}
+#nav .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.88 !important}
+#nav.s{background:rgba(28,20,10,.95) !important;backdrop-filter:blur(24px) !important;border-bottom:1px solid rgba(196,160,104,.3) !important}
+#nav.s .nav-links a{color:rgba(255,248,235,.98) !important}
 #nav.s .nav-cta{border-color:rgba(222,200,152,.7) !important;color:rgba(222,200,152,.98) !important}
 #nav.s .nav-logo img{filter:brightness(0) invert(1) !important;opacity:.95 !important}
-
-/* ── İÇ SAYFALARDA NAV: her zaman koyu (video hero yok) ── */
-body:not(.page-home) #nav{
-  background:rgba(18,12,6,.88) !important;
-  backdrop-filter:blur(20px) !important;
-  border-bottom:1px solid rgba(196,160,104,.2) !important;
-}
-
-/* ── VİDEO HERO (Scott Dunn klonu) ── */
-.sd-video-hero{
-  position:relative;
-  width:100%;
-  height:100vh;
-  min-height:600px;
-  overflow:hidden;
-  background:#0a0806;
-}
-.sd-vid{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  opacity:0;
-  transition:opacity 1.6s cubic-bezier(.4,0,.2,1);
-  z-index:1;
-}
-.sd-vid.sd-vid-active{opacity:1;z-index:2}
-.sd-vid-overlay{
-  position:absolute;
-  inset:0;
-  background:linear-gradient(
-    to bottom,
-    rgba(0,0,0,.28) 0%,
-    rgba(0,0,0,.08) 40%,
-    rgba(0,0,0,.45) 100%
-  );
-  z-index:3;
-}
-/* Video hero üzerindeki mevcut içerikler (hero metin, butonlar) doğru katmanda kalır */
-.sd-video-hero ~ * .hero-content,
-.hero-content{position:relative;z-index:4}
-
-/* Hero içindeki butonlar video üstünde görünsün */
-.sd-video-hero .btn-h,
-.sd-video-hero .btn-hg{position:relative;z-index:5}
-
-/* Video nokta göstergeleri */
-.sd-vid-dots{
-  position:absolute;
-  bottom:2.2rem;
-  left:50%;
-  transform:translateX(-50%);
-  display:flex;
-  gap:.6rem;
-  z-index:6;
-}
-.sd-dot{
-  width:28px;height:2px;
-  background:rgba(255,255,255,.35);
-  border-radius:2px;
-  cursor:pointer !important;
-  transition:background .4s,width .4s;
-}
-.sd-dot.sd-dot-active{background:rgba(255,255,255,.9);width:44px}
-
-/* ── SCROLL REVEAL (fade-in + slide-up) ── */
-.sd-reveal{
-  opacity:0;
-  transform:translateY(32px);
-  transition:opacity .75s cubic-bezier(.4,0,.2,1),transform .75s cubic-bezier(.4,0,.2,1);
-}
-.sd-reveal.sd-visible{opacity:1;transform:translateY(0)}
 
 /* ── MOBILE HAMBURGER MENU ── */
 .mob-menu-btn{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer !important;padding:6px;z-index:301;position:relative}
@@ -292,40 +179,12 @@ body:not(.page-home) #nav{
 .mob-menu-btn.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
 .mob-menu-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
 .mob-menu-btn.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
-.mob-nav-overlay{
-  position:fixed;inset:0;
-  background:rgba(12,8,4,.97);
-  backdrop-filter:blur(28px);
-  z-index:299;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.8rem;
-  opacity:0;pointer-events:none;
-  transition:opacity .4s cubic-bezier(.4,0,.2,1);
-}
+.mob-nav-overlay{position:fixed;inset:0;background:rgba(28,20,10,.97);backdrop-filter:blur(24px);z-index:299;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5rem;opacity:0;pointer-events:none;transition:opacity .35s ease}
 .mob-nav-overlay.open{opacity:1;pointer-events:all}
-.mob-nav-overlay a{
-  font-family:'Cormorant Garamond',Georgia,serif;
-  font-size:clamp(30px,6vw,46px);
-  font-weight:300;
-  color:rgba(255,248,235,.88);
-  text-decoration:none;
-  letter-spacing:.04em;
-  transition:color .3s,letter-spacing .3s;
-}
-.mob-nav-overlay a:hover{color:#C4A068;letter-spacing:.08em}
-.mob-nav-overlay .mob-cta{
-  font-family:'Jost',sans-serif;
-  font-size:10px;font-weight:300;
-  letter-spacing:.24em;text-transform:uppercase;
-  padding:.9rem 2.8rem;
-  border:1px solid rgba(196,160,104,.55);
-  color:#DEC898;margin-top:1.2rem;
-}
-@media(max-width:900px){
-  .mob-menu-btn{display:flex !important}
-  .nav-links{display:none !important}
-  .nav-cta{display:none !important}
-  .nav-lang{display:none !important}
-}
+.mob-nav-overlay a{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(28px,6vw,42px);font-weight:300;color:rgba(255,248,235,.9);text-decoration:none;transition:color .3s}
+.mob-nav-overlay a:hover{color:#C4A068}
+.mob-nav-overlay .mob-cta{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.22em;text-transform:uppercase;padding:.85rem 2.5rem;border:1px solid rgba(196,160,104,.6);color:#DEC898;margin-top:1rem}
+@media(max-width:900px){.mob-menu-btn{display:flex !important}.nav-links{display:none !important}.nav-cta{display:none !important}.nav-lang{display:none !important}}
 
 /* ── PAGE COMMON ── */
 .page-section{max-width:1440px;margin:0 auto;padding:4rem 4rem 8rem}
@@ -335,7 +194,7 @@ body:not(.page-home) #nav{
 .page-title-block .sh{color:#28282E}
 .page-title-block .sh em{color:#9A7040}
 
-/* ── FILTER BAR ── */
+/* ── FILTER BAR (büyütülmüş) ── */
 .filter-bar{display:flex;flex-wrap:wrap;gap:1.2rem;align-items:flex-end;background:rgba(255,255,255,.6);backdrop-filter:blur(12px);border:1px solid rgba(196,160,104,.28);padding:2.4rem 3rem;margin-bottom:4rem;border-radius:2px}
 .filter-group{display:flex;flex-direction:column;gap:.55rem;flex:1;min-width:180px}
 .filter-group label{font-size:9px;font-weight:400;letter-spacing:.28em;text-transform:uppercase;color:#C4A068}
@@ -365,7 +224,7 @@ body:not(.page-home) #nav{
 .bg-c{background:linear-gradient(155deg,#A07858 0%,#785838 45%,#503818 100%)}
 .bg-p{background:linear-gradient(155deg,#806898 0%,#604878 45%,#402858 100%)}
 
-/* ── ABOUT ── */
+/* ── ABOUT (hakkimizda) ── */
 .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:7rem;align-items:center}
 .about-img{width:100%;max-height:100%;object-fit:cover;align-self:center}
 .about-text{max-width:620px}
@@ -426,20 +285,10 @@ body.page-rotalar .filter-btn:hover{background:#1a3a15 !important}
 body.page-iletisim{background:#EDE5D8 !important}
 
 /* ── RESPONSIVE ── */
-@media(max-width:768px){
-  .tour-grid{grid-template-columns:1fr 1fr}
-  .contact-grid{grid-template-columns:1fr;gap:3rem}
-  .about-grid{grid-template-columns:1fr;gap:3rem}
-  .filter-bar{flex-direction:column}
-  .page-section{padding:2rem 1.5rem 5rem}
-  .page-title-block{padding:8rem 0 2rem}
-  .form-row{grid-template-columns:1fr}
-  .sd-video-hero{height:100svh}
-}
+@media(max-width:768px){.tour-grid{grid-template-columns:1fr 1fr}.contact-grid{grid-template-columns:1fr;gap:3rem}.about-grid{grid-template-columns:1fr;gap:3rem}.filter-bar{flex-direction:column}.page-section{padding:2rem 1.5rem 5rem}.page-title-block{padding:8rem 0 2rem}.form-row{grid-template-columns:1fr}}
 @media(max-width:480px){.tour-grid{grid-template-columns:1fr}}
 </style>
 """
-
 MOB_HTML="""
 <div class="mob-nav-overlay" id="mobNav">
   <a href="/butik-grup-turlari.html">Butik Grup Turları</a>
@@ -449,7 +298,6 @@ MOB_HTML="""
   <a href="/seyahatini-planla.html" class="mob-cta">Seyahatini Planla</a>
 </div>
 """
-
 MOB_JS="""
 <script>
 document.addEventListener('DOMContentLoaded',function(){
@@ -462,61 +310,8 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 """
-
-VIDEO_HERO_JS = """
-<script>
-/* ── VİDEO HERO: cross-fade döngüsü ── */
-(function(){
-  var INTERVAL = 6000; // her video kaç ms oynasın
-  var vids = document.querySelectorAll('.sd-vid');
-  var dots = document.querySelectorAll('.sd-dot');
-  if(!vids.length) return;
-  var current = 0;
-  function goTo(idx){
-    vids[current].classList.remove('sd-vid-active');
-    dots[current] && dots[current].classList.remove('sd-dot-active');
-    current = idx % vids.length;
-    vids[current].classList.add('sd-vid-active');
-    dots[current] && dots[current].classList.add('sd-dot-active');
-  }
-  var timer = setInterval(function(){ goTo(current+1); }, INTERVAL);
-  dots.forEach(function(d,i){
-    d.addEventListener('click',function(){
-      clearInterval(timer);
-      goTo(i);
-      timer = setInterval(function(){ goTo(current+1); }, INTERVAL);
-    });
-  });
-  /* Sayfa geçiş efekti: linklere tıklandığında fade-out */
-  document.querySelectorAll('a[href]').forEach(function(a){
-    var href = a.getAttribute('href');
-    if(!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('http')) return;
-    a.addEventListener('click',function(e){
-      e.preventDefault();
-      document.body.style.transition='opacity .45s';
-      document.body.style.opacity='0';
-      setTimeout(function(){ window.location.href=href; },420);
-    });
-  });
-})();
-
-/* ── SCROLL REVEAL ── */
-(function(){
-  var els = document.querySelectorAll('.sd-reveal');
-  if(!els.length) return;
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){
-      if(e.isIntersecting){ e.target.classList.add('sd-visible'); io.unobserve(e.target); }
-    });
-  },{threshold:0.12,rootMargin:'0px 0px -40px 0px'});
-  els.forEach(function(el){ io.observe(el); });
-})();
-</script>
-"""
-
 def inject_mob(nav):
     return nav.replace('<div class="nav-r">', '<div class="nav-r"><button class="mob-menu-btn" id="mobMenuBtn" aria-label="Menü"><span></span><span></span><span></span></button>')
-
 def page_template(head, nav, footer, body, title="Sundora Travel", body_class=""):
     body_attr = f' class="{body_class}"' if body_class else ''
     return f"""<!DOCTYPE html>
@@ -536,16 +331,14 @@ const nav=document.getElementById('nav');
 if(nav) window.addEventListener('scroll',function(){{nav.classList.toggle('s',scrollY>80)}});
 </script>
 {MOB_JS}
-{VIDEO_HERO_JS}
 </body>
 </html>"""
-
 def make_rotalar(head,nav,footer):
     c=build_tour_cards()
     body=f"""
 <main><div class="page-section">
-  <div class="page-title-block sd-reveal"><div class="lbl">Keşfet</div><h1 class="sh">Tüm <em>Rotalar</em></h1></div>
-  <div class="filter-bar sd-reveal">
+  <div class="page-title-block"><div class="lbl">Keşfet</div><h1 class="sh">Tüm <em>Rotalar</em></h1></div>
+  <div class="filter-bar">
     <div class="filter-group"><label>Destinasyon</label><select><option value="">Tüm Destinasyonlar</option><option>Asya</option><option>Avrupa</option><option>Afrika</option><option>Amerika</option><option>Avustralya</option><option>Ortadoğu</option><option>Kutup Bölgeleri</option></select></div>
     <div class="filter-group"><label>Tarih</label><input type="date"/></div>
     <div class="filter-group"><label>Aktivite</label><select><option value="">Tüm Aktiviteler</option><option>Kültür &amp; Sanat</option><option>Lezzet &amp; Şarap</option><option>Safari</option><option>Spa &amp; Sağlık</option><option>Tropik Adalar</option><option>Kış Bölgeleri</option></select></div>
@@ -553,15 +346,14 @@ def make_rotalar(head,nav,footer):
     <button class="filter-btn">Ara</button>
   </div>
   <div class="tour-grid">{c}</div>
-  <div class="cta-center sd-reveal"><a href="/butik-grup-turlari.html" class="btn-e"><span>Tüm Popüler Programlar</span><svg viewBox="0 0 16 16" width="12" height="12" stroke="currentColor" fill="none" stroke-width="1.5"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></a></div>
+  <div class="cta-center"><a href="/butik-grup-turlari.html" class="btn-e"><span>Tüm Popüler Programlar</span><svg viewBox="0 0 16 16" width="12" height="12" stroke="currentColor" fill="none" stroke-width="1.5"><line x1="0" y1="8" x2="12" y2="8"></line><polyline points="8,4 12,8 8,12"></polyline></svg></a></div>
 </div></main>"""
     return page_template(head,nav,footer,body,"Rotalar | Sundora Travel", body_class="page-rotalar")
-
 def make_hakkimizda(head,nav,footer):
     body="""
 <main><div class="page-section">
-  <div class="page-title-block sd-reveal"><div class="lbl">Biz Kimiz</div><h1 class="sh">Hakkımızda</h1></div>
-  <div class="about-grid sd-reveal">
+  <div class="page-title-block"><div class="lbl">Biz Kimiz</div><h1 class="sh">Hakkımızda</h1></div>
+  <div class="about-grid">
     <div class="about-text">
       <p>Seyahat, bizim için yalnızca bir destinasyona ulaşmak değil; doğru planlandığında hayat boyu hatırlanacak bir deneyime dönüşen özel bir yolculuktur.</p>
       <p>Sundora Travel, dünya turizmine duyduğu derin ilgi, yıllara dayanan sektör tecrübesi ve global bakış açısıyla, klasik seyahat anlayışının ötesine geçmek amacıyla kurulmuştur.</p>
@@ -574,19 +366,18 @@ def make_hakkimizda(head,nav,footer):
   </div>
 </div></main>"""
     return page_template(head,nav,footer,body,"Hakkımızda | Sundora Travel")
-
 def make_seyahatini_planla(head,nav,footer):
     body="""
 <main><div class="page-section">
-  <div class="page-title-block sd-reveal"><div class="lbl">Başlayalım</div><h1 class="sh">Seyahatini <em>Planla</em></h1></div>
+  <div class="page-title-block"><div class="lbl">Başlayalım</div><h1 class="sh">Seyahatini <em>Planla</em></h1></div>
   <div class="contact-grid">
-    <div class="contact-info-col sd-reveal">
+    <div class="contact-info-col">
       <h3>Size <em>özel</em> bir<br>seyahat<br>planlayalım.</h3>
       <div class="ci-block"><div class="ci-label">Adres</div><div class="ci-value">—</div></div>
       <div class="ci-block"><div class="ci-label">Telefon</div><div class="ci-value">—</div></div>
       <div class="ci-block"><div class="ci-label">E-Posta</div><div class="ci-value">support@sundoratravel.com</div></div>
     </div>
-    <div class="contact-form-col sd-reveal">
+    <div class="contact-form-col">
       <h3>İletişim Detayları</h3>
       <div class="form-group"><label>İsim Soyisim</label><input type="text" placeholder="Adınız ve soyadınız"/></div>
       <div class="form-group"><label>Cep Telefonu</label><input type="tel" placeholder="+90 5__ ___ __ __"/></div>
@@ -608,23 +399,20 @@ def make_seyahatini_planla(head,nav,footer):
   </div>
 </div></main>"""
     return page_template(head,nav,footer,body,"Seyahatini Planla | Sundora Travel")
-
 def make_butik(head,nav,footer):
     c=build_tour_cards()
-    body=f"""<main><div class="page-section"><div class="page-title-block sd-reveal"><div class="lbl">Özenle Seçilmiş</div><h1 class="sh">Butik Grup <em>Turları</em></h1></div><div class="tour-grid">{c}</div></div></main>"""
+    body=f"""<main><div class="page-section"><div class="page-title-block"><div class="lbl">Özenle Seçilmiş</div><h1 class="sh">Butik Grup <em>Turları</em></h1></div><div class="tour-grid">{c}</div></div></main>"""
     return page_template(head,nav,footer,body,"Butik Grup Turları | Sundora Travel", body_class="page-butik")
-
 def make_kisiye(head,nav,footer):
     c=build_tour_cards()
-    body=f"""<main><div class="page-section"><div class="page-title-block sd-reveal"><div class="lbl">Sadece Sizin İçin</div><h1 class="sh">Kişiye Özel <em>Seyahatler</em></h1></div><div class="tour-grid">{c}</div></div></main>"""
+    body=f"""<main><div class="page-section"><div class="page-title-block"><div class="lbl">Sadece Sizin İçin</div><h1 class="sh">Kişiye Özel <em>Seyahatler</em></h1></div><div class="tour-grid">{c}</div></div></main>"""
     return page_template(head,nav,footer,body,"Kişiye Özel Seyahatler | Sundora Travel")
-
 def make_iletisim(head,nav,footer):
     body="""
 <main><div class="page-section">
-  <div class="page-title-block sd-reveal"><div class="lbl">Ulaşın</div><h1 class="sh"><em>İletişim</em></h1></div>
+  <div class="page-title-block"><div class="lbl">Ulaşın</div><h1 class="sh"><em>İletişim</em></h1></div>
   <div class="contact-grid">
-    <div class="contact-info-col sd-reveal">
+    <div class="contact-info-col">
       <h3>Birlikte <em>harika</em><br>şeyler<br>tasarlayalım.</h3>
       <div class="ci-block"><div class="ci-label">Adres</div><div class="ci-value">—</div></div>
       <div class="ci-block"><div class="ci-label">Telefon</div><div class="ci-value">—</div></div>
@@ -632,7 +420,7 @@ def make_iletisim(head,nav,footer):
       <div class="ci-block"><div class="ci-label">Instagram</div><div class="ci-value"><a href="https://instagram.com/sundoratravel" target="_blank" style="color:#9A7040;text-decoration:none">@sundoratravel</a></div></div>
       <div class="ci-block"><div class="ci-label">TikTok</div><div class="ci-value"><a href="https://tiktok.com/@sundoratravel" target="_blank" style="color:#9A7040;text-decoration:none">@sundoratravel</a></div></div>
     </div>
-    <div class="contact-form-col sd-reveal">
+    <div class="contact-form-col">
       <h3>Mesaj Gönderin</h3>
       <div class="form-group"><label>İsim Soyisim</label><input type="text" placeholder="Adınız ve soyadınız"/></div>
       <div class="form-group"><label>E-Posta</label><input type="email" placeholder="ornek@mail.com"/></div>
@@ -642,23 +430,22 @@ def make_iletisim(head,nav,footer):
   </div>
 </div></main>"""
     return page_template(head,nav,footer,body,"İletişim | Sundora Travel", body_class="page-iletisim")
-
 def main():
-    print("\n🌍  Sundora Travel — Sayfa Üretici v6 (Scott Dunn Edition) Başlatıldı\n")
+    print("\n🌍  Sundora Travel — Sayfa Üretici v5 Başlatıldı\n")
     if not os.path.exists(PUBLIC_DIR):
         print("HATA: public/ klasörü bulunamadı."); return
     print(f"📖  {INDEX_PATH} okunuyor...")
     html = read_index()
-    print("✂️   Cursor kaldırılıyor...");           html = remove_cursor(html)
-    print("🖼️   Hero boşluğu düzeltiliyor...");     html = fix_hero_gap(html)
-    print("🎨  Nav arka planı güncelleniyor...");    html = update_nav_style(html)
-    print("🦶  Footer güncelleniyor...");            html = update_footer(html)
-    print("🎬  Video hero ekleniyor...");            html = update_hero_image(html)
+    print("✂️   Cursor kaldırılıyor...");         html = remove_cursor(html)
+    print("🖼️   Hero boşluğu düzeltiliyor...");   html = fix_hero_gap(html)
+    print("🎨  Nav arka planı güncelleniyor...");  html = update_nav_style(html)
+    print("🦶  Footer güncelleniyor...");          html = update_footer(html)
+    print("📸  Hero görseli güncelleniyor...");    html = update_hero_image(html)
     print("🗑️   Gereksiz bölümler kaldırılıyor..."); html = remove_sections(html)
-    print("🃏  Deneyim kartları güncelleniyor...");  html = update_exp_cards(html)
-    print("✏️   Metin/link güncelleniyor...");       html = update_exp_section_text(html)
+    print("🃏  Deneyim kartları güncelleniyor..."); html = update_exp_cards(html)
+    print("✏️   Metin/link güncelleniyor...");     html = update_exp_section_text(html)
     print("🔗  Nav & hero butonları güncelleniyor..."); html = build_new_nav(html); html = update_hero_btns(html)
-    # Sayfa stillerini ekle (sadece 1 kez)
+    # Anasayfaya sayfa stillerini ekle (sadece 1 kez)
     if 'mob-menu-btn' not in html:
         html = html.replace('</head>', PAGE_STYLES + '</head>')
     # Hamburger butonunu nav-r'ye ekle
@@ -670,14 +457,9 @@ def main():
         body_open = html.find('<body')
         body_open_end = html.find('>', body_open) + 1
         html = html[:body_open_end] + '\n' + MOB_HTML + html[body_open_end:]
-    # Mob JS + Video Hero JS + Scroll Reveal'i en sona ekle
+    # Mob JS'i string'in en sonuna ekle (</body> replace yerine - çakışma olmasın)
     if "btn.addEventListener('click'" not in html:
         html = html.rstrip() + '\n' + MOB_JS + '\n'
-    if 'sd-vid-active' not in html or 'sd-pagein' not in html:
-        pass  # page_template ile otomatik ekleniyor
-    # Video Hero JS anasayfaya da ekle
-    if 'goTo(current+1)' not in html:
-        html = html.rstrip() + '\n' + VIDEO_HERO_JS + '\n'
     write_file("index.html", html)
     head=extract_head(html); nav=extract_nav(html); footer=extract_footer(html)
     print("\n📄  Sayfalar oluşturuluyor...")
@@ -687,7 +469,6 @@ def main():
     write_file("butik-grup-turlari.html",   make_butik(head,nav,footer))
     write_file("kisiye-ozel-seyahatler.html", make_kisiye(head,nav,footer))
     write_file("iletisim.html",             make_iletisim(head,nav,footer))
-    print("\n✅  Tüm sayfalar güncellendi! (Scott Dunn Edition)\n")
-
+    print("\n✅  Tüm sayfalar güncellendi!\n")
 if __name__ == "__main__":
     main()
